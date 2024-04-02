@@ -18,7 +18,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import { mainListItems, secondaryListItems } from '../components/listItems';
-import Chart from '../components/Chart';     
+import Chart from '../components/ChartGender';     
 import Deposits from '../components/Deposits';
 import Orders from '../components/Orders';
 
@@ -170,7 +170,7 @@ export default function Dashboard() {
                     p: 2,
                     display: 'flex',
                     flexDirection: 'column',
-                    height: 240,
+                    height: 300,
                   }}
                 >
                   <Chart />
