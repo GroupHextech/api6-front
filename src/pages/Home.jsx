@@ -117,13 +117,8 @@ export default function Home() {
               noWrap
               sx={{ flexGrow: 1 }}
             >
-              HexSense
+              Map
             </Typography>
-            <IconButton color="inherit">
-              <Badge badgeContent={4} color="secondary">
-                <NotificationsIcon />
-              </Badge>
-            </IconButton>
           </Toolbar>
         </AppBar>
         <Drawer variant="permanent" open={open}>
