@@ -3,44 +3,37 @@ import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import ListSubheader from '@mui/material/ListSubheader';
-import DashboardIcon from '@mui/icons-material/Dashboard';
-import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
-import PeopleIcon from '@mui/icons-material/People';
-import BarChartIcon from '@mui/icons-material/BarChart';
-import LayersIcon from '@mui/icons-material/Layers';
 import AssignmentIcon from '@mui/icons-material/Assignment';
+import HomeRoundedIcon from '@mui/icons-material/HomeRounded';
+import DashboardRoundedIcon from '@mui/icons-material/DashboardRounded';
+import MapRoundedIcon from '@mui/icons-material/MapRounded';
+import FolderSharedRoundedIcon from '@mui/icons-material/FolderSharedRounded';
 
 export const mainListItems = (
   <React.Fragment>
+    <ListItemButton href="/">
+      <ListItemIcon>
+        <HomeRoundedIcon />
+      </ListItemIcon>
+      <ListItemText primary="Home" />
+    </ListItemButton>
     <ListItemButton href="/dashboard">
       <ListItemIcon>
-        <DashboardIcon />
+        <DashboardRoundedIcon />
       </ListItemIcon>
-      <ListItemText primary="Dashboard"  />
+      <ListItemText primary="Dashboard" />
     </ListItemButton>
     <ListItemButton href="/">
       <ListItemIcon>
-        <ShoppingCartIcon />
+        <MapRoundedIcon/>
       </ListItemIcon>
       <ListItemText primary="Map" />
     </ListItemButton>
     <ListItemButton>
       <ListItemIcon>
-        <PeopleIcon />
+        <FolderSharedRoundedIcon/>
       </ListItemIcon>
-      <ListItemText primary="Customers" />
-    </ListItemButton>
-    <ListItemButton>
-      <ListItemIcon>
-        <BarChartIcon />
-      </ListItemIcon>
-      <ListItemText primary="Reports" />
-    </ListItemButton>
-    <ListItemButton>
-      <ListItemIcon>
-        <LayersIcon />
-      </ListItemIcon>
-      <ListItemText primary="Integrations" />
+      <ListItemText primary="Your data" />
     </ListItemButton>
   </React.Fragment>
 );
