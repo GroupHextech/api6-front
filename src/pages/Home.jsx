@@ -16,8 +16,8 @@ import Paper from '@mui/material/Paper';
 import Link from '@mui/material/Link';
 import MenuIcon from '@mui/icons-material/Menu';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
-import NotificationsIcon from '@mui/icons-material/Notifications';
 import { mainListItems, secondaryListItems } from '../components/listItems';
+import HeatMapChart from '../components/Maps/HeatMap';
 
 
 function Copyright(props) {
@@ -117,13 +117,9 @@ export default function Home() {
               noWrap
               sx={{ flexGrow: 1 }}
             >
-              HexSense
+              Map
             </Typography>
-            <IconButton color="inherit">
-              <Badge badgeContent={4} color="secondary">
-                <NotificationsIcon />
-              </Badge>
-            </IconButton>
+
           </Toolbar>
         </AppBar>
         <Drawer variant="permanent" open={open}>
@@ -163,8 +159,17 @@ export default function Home() {
             <Grid container spacing={3}>
 
               
-          
-
+            <Paper
+                  sx={{
+                    p: 2,
+                    display: 'flex',
+                    flex:1,
+                    flexDirection: 'column',
+                    marginLeft:3,
+                  }}
+                >
+                  <HeatMapChart></HeatMapChart>
+                </Paper>
              
             </Grid>
             <Copyright sx={{ pt: 4 }} />
