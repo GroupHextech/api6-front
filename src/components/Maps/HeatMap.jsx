@@ -53,8 +53,7 @@ const HeatMapChart = () => {
       // Adicione mais dados aqui conforme necessário para outros estados do Brasil
     ];
 
-    chart.zoomControl = new am4maps.ZoomControl();
-    chart.zoomControl.valign = 'top';
+
     
     // Ocultando ícone do amCharts
     chart.logo.disabled = true;

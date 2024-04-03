@@ -160,8 +160,17 @@ export default function Home() {
             <Grid container spacing={3}>
 
               
-          
-            <HeatMapChart></HeatMapChart>
+            <Paper
+                  sx={{
+                    p: 2,
+                    display: 'flex',
+                    flex:1,
+                    flexDirection: 'column',
+                    marginLeft:3,
+                  }}
+                >
+                  <HeatMapChart></HeatMapChart>
+                </Paper>
              
             </Grid>
             <Copyright sx={{ pt: 4 }} />
