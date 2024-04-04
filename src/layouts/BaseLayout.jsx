@@ -131,7 +131,7 @@ export default function BaseLayout(props) {
             }}
           >
             <div>
-              <img src="assets/dino-icon.svg" width={"30px"} />{" "}
+              <img src="../../assets/dino-icon.svg" width={"30px"} />{" "}
               <span style={{ fontSize: 20, fontFamily: "Bungee" }}>Hex</span>
               <span style={{ fontSize: 20, fontFamily: "Varela Round" }}>
                 Analytics
