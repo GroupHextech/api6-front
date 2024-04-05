@@ -70,7 +70,7 @@ const HeatMapChart = () => {
     };
   }, []);
 
-  return <div id="heatmap-chart" style={{ width: '100%', height: '500px' }}></div>;
+  return <div id="heatmap-chart" style={{ width: '100%', height: '70vh' }}></div>;
 };
 
 export default HeatMapChart;

@@ -163,7 +163,7 @@ export default function BaseLayout(props) {
           <Toolbar />
           <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
             {props.children}
-            <Copyright sx={{ pt: 4 }} />
+            <Copyright sx={{ pt: 2 }} />
           </Container>
         </Box>
       </Box>
