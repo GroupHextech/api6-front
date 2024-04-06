@@ -1,10 +1,8 @@
 import { useTheme } from '@mui/material/styles';
 import { LineChart, axisClasses, PieChart } from '@mui/x-charts';
 import * as React from 'react';
-
-import Title from './Title';
+import { Typography } from '@mui/material';
 import { useState, useEffect } from 'react';
-
 import { dados } from './Mocks';
 
 
@@ -13,7 +11,6 @@ function agrupar() {
   let qtdMulheres = 0;
   let qtdHomens = 0;
   for (let i = 0; i < dados.length; i++) {
-    console.log(dados[i].reviewer_gender)
     // se genero for `mulher` entao SomarMulher+1
     if (dados[i].reviewer_gender === 'F') {
       qtdMulheres++;
@@ -25,14 +22,14 @@ function agrupar() {
   return [qtdHomens, qtdMulheres]
 }
 
-export default function Chart() {
+export default function ChartGender() {
   const theme = useTheme();
   
   const valores = agrupar();
 
   return (
     <React.Fragment>
-      <Title>Quantidade de compras por gênero</Title>
+      <Typography variant='button' display='block' gutterBottom>Quantidade de compras por gênero</Typography>
       <div style={{width: '100%', flexGrow: 1, overflow: 'hidden' }}>
         <PieChart
           series={[
