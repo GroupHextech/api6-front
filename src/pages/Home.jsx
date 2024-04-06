@@ -1,27 +1,54 @@
 import * as React from "react";
+import Paper from "@mui/material/Paper";
+import Box from "@mui/material/Box"
 import BaseLayout from "../layouts/BaseLayout";
+import TypingEffect from "../components/TypingFunc/Typing";
 
 export default function Home() {
+  const texts = [
+    " Welcome to HexAnalytics.",
+    "Your platform for data analysis.",
 
-
+  ];
   return (
+    <BaseLayout titulo="Home">
+      <Box style={{flex: 1, display:"flex", flexDirection:"column", gap:10, position: "relative"}}>
+        <Paper
+          sx={{
+            marginTop:0,
+            justifyContent:"center",
+            alignContent:"center",
+            width:"100%",
+            borderRadius:5,
+            display: "flex",
+            flex: 1,
+            flexDirection: "column",
+            marginLeft: 3,
+            position: "absolute",
+            top: "50%",
+            backgroundColor:"transparent",
+            borderWidth:0,
+            boxShadow:"none",
 
-    <BaseLayout titulo="Home" style={{ flex: 1,margin:0, padding:0 }}>
-      <video
-        style={{
-          minWidth:"198vh",
-          maxWidth:"300vh",
-          minHeight:"80vh",
-          maxHeight:"92vh",
-          objectFit: "cover",
-        }}
-        autoPlay
-        loop
-        muted
-      >
-        <source src="../../public/assets/earth.mp4" type="video/mp4" />
-        Seu navegador não suporta o elemento de vídeo.
-      </video>
+
+          }}
+        >
+          <TypingEffect texts={texts}/>
+        </Paper>
+        <video
+          style={{
+            borderRadius:20,
+            width: "100%",
+            height: "auto",
+          }}
+          autoPlay
+          loop
+          muted
+        >
+          <source src="../../public/assets/earth.mp4" type="video/mp4" />
+          Seu navegador não suporta o elemento de vídeo.
+        </video>
+      </Box>
     </BaseLayout>
   );
 }
