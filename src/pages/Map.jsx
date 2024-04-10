@@ -3,15 +3,8 @@ import Paper from "@mui/material/Paper";
 import Box from "@mui/material/Box"
 import HeatMapChart from "../components/Maps/HeatMap";
 import BaseLayout from "../layouts/BaseLayout";
-import Chart from "../components/Maps/chart";
 
 export default function Map() {
-
-  const [selectedState, setSelectedState] = useState(null);
-
-  const handleStateClick = (stateId) => {
-    setSelectedState(stateId);
-  };
 
   const [activeMap, setActiveMap] = React.useState("Vendas (Geral)");
 
@@ -50,9 +43,8 @@ export default function Map() {
                 marginLeft: 3,
               }}
             >
-        <Chart state={selectedState} />
 
-        <HeatMapChart onStateClick={handleStateClick} />
+        <HeatMapChart/>
             </Paper>
           </div>
 
