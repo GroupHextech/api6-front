@@ -3,6 +3,7 @@ import Paper from "@mui/material/Paper";
 import Box from "@mui/material/Box"
 import BaseLayout from "../layouts/BaseLayout";
 import TypingEffect from "../components/TypingFunc/Typing";
+import earthVideo from '../../public/assets/earth.mp4';
 
 export default function Home() {
   const texts = [
@@ -45,7 +46,7 @@ export default function Home() {
           loop
           muted
         >
-          <source src="../../public/assets/earth.mp4" type="video/mp4" />
+          <source src={earthVideo} type="video/mp4" />
           Seu navegador não suporta o elemento de vídeo.
         </video>
       </Box>
