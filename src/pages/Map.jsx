@@ -22,7 +22,7 @@ export default function Map() {
 
         <Box style={{flex: 0.8,display:"flex", flexDirection:"column", gap:10}}>
           <Paper sx={{marginLeft: 3, justifyContent:"center", alignContent:"center"}}>
-            <h1 style={{alignSelf:"center", justifySelf:"center"}}>Dados Geográficos</h1>
+            <h1 style={{alignSelf:"center", justifySelf:"center"}}>Dados Geográficos</h1>{/* toma no cu disso aqui menó, nao consigo centralizar por causa do template*/ }
             </Paper>
         <Paper
           sx={{
