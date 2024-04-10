@@ -6,7 +6,7 @@ import am4geodata_brazilLow from '@amcharts/amcharts4-geodata/brazilLow';
 
 am4core.useTheme(am4themes_animated);
 
-const HeatMapChart = () => {
+const HeatMapChart = ({ onStateClick }) => {
   useEffect(() => {
     let chart = am4core.create('heatmap-chart', am4maps.MapChart);
     chart.geodata = am4geodata_brazilLow;
@@ -41,20 +41,12 @@ const HeatMapChart = () => {
       max: am4core.color('#1976d2'),
     });
 
-    // Dados de exemplo para estados do Brasil (substitua pelos seus próprios dados)
-    polygonSeries.data = [
-      { id: 'BR-SP', value: 1000 }, // Exemplo para o estado de São Paulo
-      { id: 'BR-RJ', value: 1000 }, 
-      {id: 'BR-BA', value: 1020},
-      {id: 'BR-PR', value: 1020},  
-      {id: 'BR-SC', value: 1020}, // Exemplo para o estado do Rio de Janeiro
-      // Exemplo para o estado do Rio de Janeiro
-      // Exemplo para o estado do Rio de Janeiro
-      // Adicione mais dados aqui conforme necessário para outros estados do Brasil
-    ];
+    // Adicionando manipulador de eventos para capturar o clique em um estado
+    polygonTemplate.events.on('hit', (ev) => {
+      const stateId = ev.target.dataItem.dataContext.id;
+      onStateClick(stateId);
+    });
 
-
-    
     // Ocultando ícone do amCharts
     chart.logo.disabled = true;
 
@@ -68,7 +60,7 @@ const HeatMapChart = () => {
     return () => {
       chart.dispose();
     };
-  }, []);
+  }, [onStateClick]);
 
   return <div id="heatmap-chart" style={{ width: '100%', height: '70vh' }}></div>;
 };
