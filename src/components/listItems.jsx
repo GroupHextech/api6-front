@@ -23,7 +23,7 @@ export const mainListItems = (
       </ListItemIcon>
       <ListItemText primary="Dashboard" />
     </ListItemButton>
-    <ListItemButton href="/">
+    <ListItemButton href="/map">
       <ListItemIcon>
         <MapRoundedIcon/>
       </ListItemIcon>
