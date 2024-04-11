@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Grid, Paper } from "@mui/material";
 import ChartGender from "../components/ChartGender";
+import ChartSales from "../components/ChartSales";
 import ChartCategories from "../components/ChartCategories";
 import Orders from "../components/Orders";
 import BaseLayout from "../layouts/BaseLayout";
@@ -21,6 +22,18 @@ export default function Dashboard() {
               }}
             >
               <ChartGender />
+            </Paper>
+          </Grid>
+          <Grid item xs={12} md={12} lg={6} >
+            <Paper
+              sx={{
+                p: 2,
+                display: "flex",
+                flexDirection: "column",
+                height: 300,
+              }}
+            >
+              <ChartSales />
             </Paper>
           </Grid>
           {/* Recent Deposits */}
