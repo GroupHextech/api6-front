@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import Paper from "@mui/material/Paper";
 import Box from "@mui/material/Box"
+import Button from "@mui/material/Button"
 import HeatMapChart from "../components/Maps/HeatMap";
 import BaseLayout from "../layouts/BaseLayout";
 
@@ -11,9 +12,6 @@ export default function Map() {
   return (
     <BaseLayout titulo="Map">
       <Box style={{}}>
-        
-
-
         <Box style={{flex: 0.8,display:"flex", flexDirection:"column", gap:10}}>
           <div>
             <Paper sx={{marginLeft: 3, justifyContent:"center", alignContent:"center"}}>
@@ -30,9 +28,8 @@ export default function Map() {
             marginLeft: 3,
             gap:10
           }}>
-            <button><p>Vendas gerais</p></button>
-            <button><p>Vendas com piramede dataria</p></button>
-            <button><p>Teste</p></button>
+            <Button variant="contained" onClick={setActiveMap}>Vendas Gerais</Button>
+      
         </Paper>
             <Paper
               sx={{
@@ -54,4 +51,14 @@ export default function Map() {
 
     </BaseLayout>
   );
+}
+
+const styles = {
+
+  button:{
+    backgroundColor:"#1976d2",
+    borderRadius:5,
+    color:"#fff",
+    borderColor:"transparent"
+  }
 }
