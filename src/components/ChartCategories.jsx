@@ -10,27 +10,18 @@ function processarDados(dados) {
   const categorias = {};
 
   dados.forEach((produto) => {
-    const categoriaLv1 = produto._id.site_category_lv1;
-    const categoriaLv2 = produto._id.site_category_lv2;
+    const categoriaLv1 = produto._id;  // Assuming _id directly contains the category
 
     if (!categorias[categoriaLv1]) {
       categorias[categoriaLv1] = {
         categoriaLv1,
-        categoriaLv2: {},
-        contagem: 0,
-        // totalRating: 0,
+        contagem: produto.count,  // Use 'count' from the data directly
       };
+    } else {
+      categorias[categoriaLv1].contagem += produto.count;
     }
-
-    if (!categorias[categoriaLv1].categoriaLv2[categoriaLv2]) {
-      categorias[categoriaLv1].categoriaLv2[categoriaLv2] = 0;
-    }
-
-    categorias[categoriaLv1].categoriaLv2[categoriaLv2] = produto.contagem;
-    categorias[categoriaLv1].contagem += produto.contagem;
-    // categorias[categoriaLv1].totalRating += parseInt(produto.overall_rating, 10);
   });
-  
+
   return Object.values(categorias);
 }
 
@@ -93,7 +84,7 @@ const ChartCategories = () => {
           series={[
             {
               innerRadius: 0,
-              outerRadius: 60,
+              outerRadius: 120,
               data: categoriesData1,
               cornerRadius: 3,
             },
