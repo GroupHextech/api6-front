@@ -4,6 +4,7 @@ import * as React from 'react';
 import { Typography } from '@mui/material';
 import { useState, useEffect } from 'react';
 import { dados } from './Mocks';
+import { getSales } from '../services/SalesService';
 
 function determinarPeriodo(horario) {
   // Extrair apenas a parte do horário
@@ -25,13 +26,8 @@ function agruparVendasPorPeriodo(dados) {
 
   // Iterando sobre cada item dos dados
   dados.forEach((item) => {
-    // const ano = new Date(item.submission_date).getFullYear(); // Obtendo o ano da data
-    const ano = Math.floor(Math.random() * (2024 - 2018) + 2018);
-    const mes = new Date(item.submission_date).getMonth() + 1;
-    const horas = Math.floor(Math.random() * 24); 
-
     // Criando uma chave no formato "YYYY-MM" para representar o período
-    const periodo = determinarPeriodo(item.submission_date)
+    const periodo = determinarPeriodo(item._id)
 
     // Inicializando o contador de vendas para o período, se necessário
     if (!vendasPorPeriodo[periodo]) {
@@ -39,7 +35,7 @@ function agruparVendasPorPeriodo(dados) {
     }
 
     // Incrementando o contador de vendas para o período
-    vendasPorPeriodo[periodo]++;
+    vendasPorPeriodo[periodo] = vendasPorPeriodo[periodo] + item.count;
   });
 
   // Convertendo o objeto em um array de objetos para o BarChart
@@ -54,22 +50,37 @@ function agruparVendasPorPeriodo(dados) {
 export default function Chart() {
   // const theme = useTheme();
 
-  // Obtendo os dados agrupados por período
-  const dadosAgrupados = agruparVendasPorPeriodo(dados);
+  const [salesData, setSalesData] = useState([])
 
-  return (
-    <React.Fragment>
-      <Typography variant='button' display='block' gutterBottom>Quantidade de vendas por período</Typography>
-      <BarChart
-        dataset={dadosAgrupados} // Passando os dados agrupados para o BarChart
-        xAxis={[{ scaleType: 'band', dataKey: 'periodo' }]} // Configurando o eixo x
-        series={[
-          { dataKey: 'qtde', label: 'Quantidade de vendas' }
-        ]} // Configurando a série de dados
-        height={400} // Definindo a altura do gráfico
-        width={400}
-        // {...theme} // Passando o tema para o gráfico
-      />
-    </React.Fragment>
-  );
+  useEffect(() => {
+    async function handleSalesData() {
+      try {
+        const data = await getSales();
+        setSalesData(agruparVendasPorPeriodo(data)); 
+      } catch (error) {
+        console.error('Error fetching sales:', error.message);
+      }
+    }
+
+    handleSalesData()
+  }, [])
+
+  if (salesData?.length) {
+    return (
+      <React.Fragment>
+        <Typography variant='button' display='block' gutterBottom>Quantidade de vendas por período</Typography>
+        <BarChart
+          dataset={salesData} // Passando os dados agrupados para o BarChart
+          xAxis={[{ scaleType: 'band', dataKey: 'periodo' }]} // Configurando o eixo x
+          series={[
+            { dataKey: 'qtde', label: 'Quantidade de vendas' }
+          ]} // Configurando a série de dados
+          height={400} // Definindo a altura do gráfico
+          width={400}
+          // {...theme} // Passando o tema para o gráfico
+        />
+      </React.Fragment>
+    );
+  }
+  return <></>
 }
