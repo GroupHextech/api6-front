@@ -18,7 +18,7 @@ const HeatMapChart = () => {
         // Obtendo os dados calculados
         const data = await getStates();
 
-        debugger
+        
         // Convertendo os dados calculados para o formato necessário para o mapa de calor
         const formattedStateData = data.map(state => ({
           id: `BR-${state._id}`, // Formato necessário para os identificadores dos estados
