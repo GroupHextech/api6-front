@@ -38,3 +38,16 @@ export async function getCategories() {
         throw new Error(error.message);
       }
 }
+
+export async function getStates() {
+    try {
+        const response = await fetch(`${API_URL}/css/state`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch states');
+        }
+        const data = await response.json();
+        return data.list;
+      } catch (error) {
+        throw new Error(error.message);
+      }
+}
