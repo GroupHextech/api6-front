@@ -50,11 +50,11 @@ export default function Dashboard() {
             </Paper>
           </Grid>
           {/* Recent Orders */}
-          <Grid item xs={6}>
+          {/* <Grid item xs={6}>
             <Paper sx={{ p: 2, display: "flex", flexDirection: "column" }}>
               <Orders />
             </Paper>
-          </Grid>
+          </Grid> */}
         </Grid>
     </BaseLayout>
   );

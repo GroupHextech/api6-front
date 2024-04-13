@@ -4,6 +4,7 @@ import * as am4maps from '@amcharts/amcharts4/maps';
 import am4themes_animated from '@amcharts/amcharts4/themes/animated';
 import am4geodata_brazilLow from '@amcharts/amcharts4-geodata/brazilLow';
 import { dados } from "../Mocks";
+import { getStates } from "../../services/SalesService.js";
 
 am4core.useTheme(am4themes_animated);
 
@@ -11,27 +12,26 @@ const HeatMapChart = () => {
   const [stateData, setStateData] = useState([]);
 
   useEffect(() => {
-    // Função para calcular a quantidade de avaliações para cada estado
-    const calculateStateData = () => {
-      const stateCounts = {};
-      dados.forEach(review => {
-        const state = review.reviewer_state;
-        stateCounts[state] = stateCounts[state] ? stateCounts[state] + 1 : 1;
-      });
-      return stateCounts;
-    };
 
-    // Obtendo os dados calculados
-    const calculatedStateData = calculateStateData();
+    async function handleStatesData() {
+      try {
+        // Obtendo os dados calculados
+        const data = await getStates();
 
-    // Convertendo os dados calculados para o formato necessário para o mapa de calor
-    const formattedStateData = Object.entries(calculatedStateData).map(([state, count]) => ({
-      id: `BR-${state}`, // Formato necessário para os identificadores dos estados
-      name: state,
-      value: count
-    }));
+        
+        // Convertendo os dados calculados para o formato necessário para o mapa de calor
+        const formattedStateData = data.map(state => ({
+          id: `BR-${state._id}`, // Formato necessário para os identificadores dos estados
+          name: state._id,
+          value: state.count
+        }));
+        setStateData(formattedStateData);
+      } catch (error) {
+        console.error('Error fetching states:', error.message);
+      }
+    }
 
-    setStateData(formattedStateData);
+    handleStatesData();
   }, []);
 
   useEffect(() => {

@@ -3,30 +3,23 @@ import { useState } from "react";
 import { PieChart, BarChart } from "@mui/x-charts";
 import { dados } from "./Mocks.jsx";
 import { Typography, Box, Button } from "@mui/material";
+import { useEffect } from "react";
+import { getCategories } from "../services/SalesService.js";
 
 function processarDados(dados) {
   const categorias = {};
 
   dados.forEach((produto) => {
-    const categoriaLv1 = produto.site_category_lv1;
-    const categoriaLv2 = produto.site_category_lv2;
+    const categoriaLv1 = produto._id;  // Assuming _id directly contains the category
 
     if (!categorias[categoriaLv1]) {
       categorias[categoriaLv1] = {
         categoriaLv1,
-        categoriaLv2: {},
-        contagem: 0,
-        // totalRating: 0,
+        contagem: produto.count,  // Use 'count' from the data directly
       };
+    } else {
+      categorias[categoriaLv1].contagem += produto.count;
     }
-
-    if (!categorias[categoriaLv1].categoriaLv2[categoriaLv2]) {
-      categorias[categoriaLv1].categoriaLv2[categoriaLv2] = 0;
-    }
-
-    categorias[categoriaLv1].categoriaLv2[categoriaLv2]++;
-    categorias[categoriaLv1].contagem++;
-    // categorias[categoriaLv1].totalRating += parseInt(produto.overall_rating, 10);
   });
 
   return Object.values(categorias);
@@ -51,18 +44,34 @@ function mapearDadosCategoriasLv2(categorias) {
   }, []);
 }
 
-const dadosProcessados = processarDados(dados);
-const dataForBarChart = mapearDadosCategoriasLv1(dadosProcessados);
-
-const data1 = mapearDadosCategoriasLv1(dadosProcessados);
-const data2 = mapearDadosCategoriasLv2(dadosProcessados);
-
 const ChartCategories = () => {
   const [chartType, setChartType] = useState("pie"); // Use useState inside the component
 
   const toggleChartType = () => {
     setChartType((prevChartType) => (prevChartType === "pie" ? "bar" : "pie"));
   };
+
+  const [categoriesData1, setCategoriesData1] = useState([])
+  const [categoriesData2, setCategoriesData2] = useState([])
+  const [dataForBarChart, setDataForBarChart] = useState([])
+
+  useEffect(() => {
+    async function handleCategoriesData() {
+      try {
+        const data = await getCategories();
+
+        const dadosProcessados = processarDados(data);
+        setDataForBarChart(mapearDadosCategoriasLv1(dadosProcessados));
+        
+        setCategoriesData1(mapearDadosCategoriasLv1(dadosProcessados));
+        setCategoriesData2(mapearDadosCategoriasLv2(dadosProcessados));
+      } catch (error) {
+        console.error('Error fetching genders:', error.message);
+      }
+    }
+
+    handleCategoriesData()
+  }, [])
 
   return (
     <>
@@ -75,17 +84,17 @@ const ChartCategories = () => {
           series={[
             {
               innerRadius: 0,
-              outerRadius: 60,
-              data: data1,
+              outerRadius: 120,
+              data: categoriesData1,
               cornerRadius: 3,
             },
-            {
-              innerRadius: 60,
-              outerRadius: 100,
-              data: data2,
-              cornerRadius: 4,
-              highlightScope: { faded: "global", highlighted: "item" },
-            },
+            // {
+            //   innerRadius: 60,
+            //   outerRadius: 100,
+            //   data: categoriesData2,
+            //   cornerRadius: 4,
+            //   highlightScope: { faded: "global", highlighted: "item" },
+            // },
           ]}
             width={250}
             height={290}
