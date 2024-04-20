@@ -13,7 +13,6 @@ import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { useCreateUserWithEmailAndPassword } from 'react-firebase-hooks/auth';
-import { auth } from '../../services/firebaseConfig';
 
 
 function Copyright(props) {
@@ -33,18 +32,6 @@ const defaultTheme = createTheme();
 
 export default function Register() {
 
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [
-        createUserWithEmailAndPassword,
-        user,
-        loading,
-        error,
-    ] = useCreateUserWithEmailAndPassword(auth);
-
-    function handleSignIn (){
-        useCreateUserWithEmailAndPassword(email, password);
-    };
 
     
   const handleSubmit = (event) => {
