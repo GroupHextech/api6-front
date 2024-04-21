@@ -12,7 +12,6 @@ export default function Home() {
 
   ];
   return (
-    <BaseLayout titulo="Home">
       <Box style={{flex: 1, display:"flex", flexDirection:"column", gap:10, position: "relative"}}>
         <Paper
           sx={{
@@ -50,6 +49,5 @@ export default function Home() {
           Seu navegador não suporta o elemento de vídeo.
         </video>
       </Box>
-    </BaseLayout>
   );
 }
