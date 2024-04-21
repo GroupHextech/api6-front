@@ -21,7 +21,8 @@ import { ColorModeContext, useMode } from "./theme";
 import Home from "../src/pages/Home";
 import Dashboard from "../src/pages/Dashboard";
 import Map from "../src/pages/Map";
-
+import Register from "../src/pages/auth/Register"
+import Login from "./pages/auth/Login";
 export default function AppRoutes() {
   const [theme, colorMode] = useMode();
   const [isSidebar, setIsSidebar] = useState(true);
@@ -38,19 +39,6 @@ export default function AppRoutes() {
               <Route path="/" element={<Home />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/map" element={<Map />} />
-
-              {/* <Route path="/" element={<Dashboard />} />
-              <Route path="/team" element={<Team />} />
-              <Route path="/contacts" element={<Contacts />} />
-              <Route path="/invoices" element={<Invoices />} />
-              <Route path="/form" element={<Form />} />
-              <Route path="/bar" element={<Bar />} />
-              <Route path="/pie" element={<Pie />} />
-              <Route path="/line" element={<Line />} />
-              <Route path="/faq" element={<FAQ />} />
-              <Route path="/calendar" element={<Calendar />} />
-              <Route path="/geography" element={<Geography />} /> */}
-
             </Routes>
           </main>
         </div>
