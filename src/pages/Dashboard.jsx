@@ -13,6 +13,7 @@ import StatBox from "../components/StatBox";
 // CHARTS:
 import GenderPieChart from "../components/charts/GenderPieChart";
 import SalesBarChart from "../components/charts/SalesBarChart";
+import MonthlyPeriodChart from "../components/charts/MonthlyPeriodChart";
 
 // ICONS:
 import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
@@ -149,14 +150,14 @@ const Dashboard = () => {
           p="30px"
           display="flex"
           flexDirection="column"
-          // mt="25px"
+        // mt="25px"
         >
           <Typography variant="h5" fontWeight="600">
             Gender
           </Typography>
           <GenderPieChart />
         </Box>
-        {/*   SALES BY PERIOD */}
+        {/* SALES BY PERIOD */}
         <Box
           gridColumn="span 4"
           gridRow="span 2"
@@ -164,7 +165,7 @@ const Dashboard = () => {
           p="30px"
           display="flex"
           flexDirection="column"
-          // mt="25px"
+        // mt="25px"
         >
           <Typography variant="h5" fontWeight="600">
             Sales by period
@@ -176,7 +177,7 @@ const Dashboard = () => {
           gridColumn="span 4"
           gridRow="span 2"
           backgroundColor={colors.primary[400]}
-          // mt="25px"
+        // mt="25px"
         >
           <Box
             mt="25px"
@@ -205,6 +206,23 @@ const Dashboard = () => {
           </Box>
           <Box height="250px" m="0 0 0 0">
             <CategoriesPieAndBarChart chartType={chartType} />
+          </Box>
+        </Box>
+        {/* MONTHLY PERIOD CHART */}
+        <Box
+          gridColumn="span 4"
+          gridRow="span 2"
+          backgroundColor={colors.primary[400]}
+          p="30px"
+          display="flex"
+          flexDirection="column"
+        // mt="25px"
+        >
+          <Typography variant="h5" fontWeight="600">
+          Number of sales per month
+          </Typography>
+          <Box height="250px" m="0 0 0 0">
+            <MonthlyPeriodChart />
           </Box>
         </Box>
       </Box>
