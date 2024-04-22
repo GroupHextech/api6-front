@@ -25,7 +25,7 @@ export const dados = [
         "negativo": 50,
     },
     {
-        "_id": "June",
+        "_id": "Jun",
         "positivo": 60,
         "negativo": 40,
     }
