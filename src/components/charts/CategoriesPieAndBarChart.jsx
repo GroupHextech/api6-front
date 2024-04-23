@@ -185,21 +185,6 @@ const CategoriesPieAndBarChart = ({ chartType }) => {
             ]}
             legends={[]}
           />
-          {/* <PieChart
-            series={[
-              {
-                innerRadius: 0,
-                outerRadius: 120,
-                data: categoriesData1,
-                cornerRadius: 3,
-              },
-            ]}
-            width={250}
-            height={290}
-            slotProps={{
-              legend: { hidden: true },
-            }}
-          /> */}
         </>
       )}
       {chartType === "bar" && (
@@ -208,6 +193,12 @@ const CategoriesPieAndBarChart = ({ chartType }) => {
             data={dataForBarChart}
             theme={{
               // added
+              tooltip: {
+                container: {
+                  background: "#fff", // cor de fundo do tooltip
+                  color: "#000", // cor do texto do tooltip
+                },
+              },
               axis: {
                 domain: {
                   line: {
