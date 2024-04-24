@@ -1,44 +1,47 @@
-import { useState } from "react";
-import { Routes, Route } from "react-router-dom";
+import React, { useState, useContext } from "react";
+import { Routes, Route, useLocation, Navigate } from "react-router-dom";
 import Topbar from "./scenes/global/Topbar";
 import Sidebar from "./scenes/global/Sidebar";
-
-// import Dashboard from "./scenes/dashboard";
-
-// import Team from "./scenes/team";
-// import Invoices from "./scenes/invoices";
-// import Contacts from "./scenes/contacts";
-// import Bar from "./scenes/bar";
-// import Form from "./scenes/form";
-// import Line from "./scenes/line";
-// import Pie from "./scenes/pie";
-// import FAQ from "./scenes/faq";
-// import Geography from "./scenes/geography";
 import { CssBaseline, ThemeProvider } from "@mui/material";
 import { ColorModeContext, useMode } from "./theme";
-// import Calendar from "./scenes/calendar/calendar";
-// import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Home from "../src/pages/Home";
 import Dashboard from "../src/pages/Dashboard";
 import Map from "../src/pages/Map";
-import Register from "../src/pages/auth/Register"
+import Register from "../src/pages/auth/Register";
 import Login from "./pages/auth/Login";
+import { AuthContext } from "./services/authContext";
+
 export default function AppRoutes() {
   const [theme, colorMode] = useMode();
-  const [isSidebar, setIsSidebar] = useState(true);
+  const [isSidebar, setIsSidebar] = useState(false);
+  const location = useLocation();
+  const isLoginPage = location.pathname === "/login";
+  const isRegisterPage = location.pathname === "/register";
+
+  // Verificar se o usuário está autenticado 
+  const { isAuthenticated } = useContext(AuthContext);
+
+  // Função para renderizar as rotas privadas apenas se o usuário estiver autenticado
+  const renderPrivateRoute = (element) => {
+    return isAuthenticated ? element : <Navigate to="/login" />;
+  };
 
   return (
     <ColorModeContext.Provider value={colorMode}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <div className="app">
-          <Sidebar isSidebar={isSidebar} />
+          {!isLoginPage && !isRegisterPage && <Sidebar isSidebar={isSidebar} />}
           <main className="content">
-            <Topbar setIsSidebar={setIsSidebar} />
+            {!isLoginPage && !isRegisterPage && <Topbar setIsSidebar={setIsSidebar} />}
+
             <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/map" element={<Map />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/" element={renderPrivateRoute(<Home />)} />
+              <Route path="/dashboard" element={renderPrivateRoute(<Dashboard />)} />
+              <Route path="/map" element={renderPrivateRoute(<Map />)} />
+              {/* Adicione outras rotas aqui */}
             </Routes>
           </main>
         </div>
