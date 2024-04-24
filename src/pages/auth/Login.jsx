@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useState } from "react";
+import { useState, useContext } from "react";
 import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
 import CssBaseline from '@mui/material/CssBaseline';
@@ -15,6 +15,9 @@ import Container from '@mui/material/Container';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { useSignInWithEmailAndPassword } from "react-firebase-hooks/auth";
 import { auth } from '../../services/firebaseConfig';
+import { AuthContext } from '../../services/authContext';
+import { useNavigate } from "react-router-dom";
+
 
 
 function Copyright(props) {
@@ -36,31 +39,33 @@ const defaultTheme = createTheme();
 
 
 export default function Login() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const { setAuthenticated } = useContext(AuthContext);
+  const navigate = useNavigate();
 
+  const [signInWithEmailAndPassword, user, loading, error] =
+    useSignInWithEmailAndPassword(auth);
 
-    const [email, setEmail] = useState("");
-const [password, setPassword] = useState("");
+  const handleSignIn = (e) => {
+    e.preventDefault();
+    signInWithEmailAndPassword(email, password);
+  };
 
-const [signInWithEmailAndPassword, user, loading, error] =
-  useSignInWithEmailAndPassword(auth);
+  if (loading) {
+    return <p>Carregando...</p>;
+  }
 
-function handleSignIn(e) {
-  e.preventDefault();
-  signInWithEmailAndPassword(email, password);
-}
-
-if (loading) {
-  return <p>carregando...</p>;
-}
-if (user) {
-  return console.log(user);
-}
+  if (user) {
+    console.log("Esse é o usuário:", user);
+    setAuthenticated(true);
+    navigate("/");
+  }
 
   const handleSubmit = (event) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
   };
-
   return (
     <ThemeProvider theme={defaultTheme}>
       <CssBaseline />
@@ -145,7 +150,7 @@ if (user) {
               </Button>
               <Grid container justifyContent="flex-end">
                 <Grid item>
-                  <Link href="/signup" variant="body2">
+                  <Link href="/register" variant="body2">
                     I don't have account yet
                   </Link>
                 </Grid>
