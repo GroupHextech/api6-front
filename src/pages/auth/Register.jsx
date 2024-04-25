@@ -14,7 +14,8 @@ import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { useCreateUserWithEmailAndPassword } from 'react-firebase-hooks/auth';
-import { auth } from '../../services/firebaseConfig';
+import { auth, firestore } from '../../services/firebaseConfig';
+import { doc,setDoc,addDoc, collection } from '@firebase/firestore';
 
 
 
@@ -37,17 +38,44 @@ export default function Register() {
 
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [name , setName] = useState("")
+    const [term , setTerm] = useState(true)
   
     const [createUserWithEmailAndPassword, user, loading, error] =
       useCreateUserWithEmailAndPassword(auth);
   
-    function handleSignOut(e) {
-      e.preventDefault();
-      if (password.length < 6) {
-        alert('The password must have at least 6 characters.');
-        return;
+      function handleSignOut(e) {
+        e.preventDefault();
+        if (password.length < 6) {
+          alert('The password must have at least 6 characters.');
+          return;
+        }
+        
+        createUserWithEmailAndPassword(email, password)
+          .then((userCredential) => {
+            const user = userCredential.user;
+            const userUid = user.uid
+            createUser(userUid);
+          })
+          .catch((error) => {
+            console.error("Error creating user:", error);
+          });  
       }
-      createUserWithEmailAndPassword(email, password);
+
+    const userCollectionRef = collection(firestore, "users")
+
+    async function createUser(uid) {
+      const userRef = doc(userCollectionRef, uid); // Referência ao documento usando o uid como id
+      try {
+        await setDoc(userRef, {
+          name,
+          email,
+          term,
+        });
+        console.log("User created successfully!");
+      } catch (error) {
+        console.error("Error creating user:", error);
+      }
     }
   
     if (loading) {
@@ -57,6 +85,10 @@ export default function Register() {
   const handleSubmit = (event) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
+  };
+
+  const handleCheckboxChange = (event) => {
+    setTerm(event.target.checked); // Atualiza o estado quando o checkbox é alterado
   };
 
   return (
@@ -102,7 +134,18 @@ export default function Register() {
             </Typography>
             <Box component="form" noValidate onSubmit={handleSubmit} sx={{ mt: 3 }}>
               <Grid container spacing={2}>
-   
+              <Grid item xs={12}>
+                  <TextField
+                    required
+                    fullWidth
+                    id="name"
+                    label="Name"
+                    name="email"
+                    autoComplete="name"
+                    onChange={(e) => setName(e.target.value)}
+                  />
+                </Grid>
+
                 <Grid item xs={12}>
                   <TextField
                     required
@@ -129,7 +172,11 @@ export default function Register() {
                 </Grid>
                 <Grid item xs={12}>
                   <FormControlLabel
-                    control={<Checkbox value="allowExtraEmails" color="primary" />}
+                    control={        <Checkbox
+                      checked={term}
+                      onChange={handleCheckboxChange}
+                      color="primary"
+                    />}
                     label="I want to receive inspiration, marketing promotions and updates via email."
                   />
                 </Grid>
