@@ -1,9 +1,7 @@
 import { useState } from "react";
 import { Grid } from "@mui/material";
-import ChartCategories from "../components/ChartCategories";
-import { maxHeight } from "@mui/system";
 
-import { Box, Button, IconButton, Typography, useTheme } from "@mui/material";
+import { Box, Button, Typography, useTheme } from "@mui/material";
 import { tokens } from "../theme";
 
 // COMPONENTS:
