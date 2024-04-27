@@ -16,6 +16,8 @@ import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { useCreateUserWithEmailAndPassword } from "react-firebase-hooks/auth";
 import { auth } from "../../services/firebaseConfig";
 
+import TermsAndConditions from "../../components/register/TermsAndConditions";
+
 function Copyright(props) {
   return (
     <Typography
@@ -69,20 +71,20 @@ export default function Register() {
   const handleAgreeTerms = (e) => {
     e.preventDefault();
     setShowTermsAlert(false);
-    // Aqui você pode prosseguir com a lógica para cadastrar o usuário
+    // Aqui você pode chamar a função createUserWithEmailAndPassword
     createUserWithEmailAndPassword(email, password)
-    .then((userCredential) => {
-      // Se o usuário for criado com sucesso, você pode acessar as informações do usuário aqui
-      const user = userCredential.user;
-      console.log('User created:', user);
-      
-      // Aqui você pode adicionar qualquer outra lógica necessária após o cadastro do usuário
-    })
-    .catch((error) => {
-      // Se houver um erro ao criar o usuário, você pode lidar com ele aqui
-      const errorMessage = error.message;
-      console.error('Error creating user:', errorMessage);
-    });
+      .then((userCredential) => {
+        // Se o usuário for criado com sucesso, você pode acessar as informações do usuário aqui
+        const user = userCredential.user;
+        console.log("User created:", user);
+
+        // Aqui você pode adicionar qualquer outra lógica necessária após o cadastro do usuário
+      })
+      .catch((error) => {
+        // Se houver um erro ao criar o usuário, você pode lidar com ele aqui
+        const errorMessage = error.message;
+        console.error("Error creating user:", errorMessage);
+      });
   };
 
   return (
@@ -174,14 +176,12 @@ export default function Register() {
                 Sign Up
               </Button>
               {showTermsAlert && (
-                    <div className="terms-alert">
-                      <Typography>Do you agree to the terms of use?</Typography>
-                      <Button onClick={() => setShowTermsAlert(false)}>
-                        Cancel
-                      </Button>
-                      <Button onClick={(event) => handleAgreeTerms(event)}>Agree</Button>
-                    </div>
-                  )}
+                <TermsAndConditions
+                  open={showTermsAlert}
+                  handleClose={() => setShowTermsAlert(false)}
+                  handleAgree={handleAgreeTerms}
+                />
+              )}
               <Grid container justifyContent="flex-end">
                 <Grid item>
                   <Link href="/login" variant="body2">
