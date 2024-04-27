@@ -146,7 +146,7 @@ export default function Login() {
                 sx={{ mt: 3, mb: 2 }}
                 onClick={handleSignIn}
               >
-                Sign Up
+                Sign In
               </Button>
               <Grid container justifyContent="flex-end">
                 <Grid item>
