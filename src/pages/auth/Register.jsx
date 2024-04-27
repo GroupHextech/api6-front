@@ -14,7 +14,8 @@ import Typography from "@mui/material/Typography";
 import Container from "@mui/material/Container";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { useCreateUserWithEmailAndPassword } from "react-firebase-hooks/auth";
-import { auth } from "../../services/firebaseConfig";
+import { auth, firestore } from "../../services/firebaseConfig";
+import { doc, setDoc, addDoc, collection } from "@firebase/firestore";
 
 import TermsAndConditions from "../../components/register/TermsAndConditions";
 
@@ -41,6 +42,8 @@ const defaultTheme = createTheme();
 export default function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [term, setTerm] = useState(true);
   const [showTermsAlert, setShowTermsAlert] = useState(false);
 
   const [createUserWithEmailAndPassword, user, loading, error] =
@@ -59,6 +62,22 @@ export default function Register() {
     return <p>carregando...</p>;
   }
 
+  const userCollectionRef = collection(firestore, "users");
+
+  async function createUser(uid) {
+    const userRef = doc(userCollectionRef, uid); // Referência ao documento usando o uid como id
+    try {
+      await setDoc(userRef, {
+        name,
+        email,
+        term: true, // Set term to true
+      });
+      console.log("User created successfully!");
+    } catch (error) {
+      console.error("Error creating user:", error);
+    }
+  }
+
   const handleSubmit = (event) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
@@ -70,20 +89,20 @@ export default function Register() {
 
   const handleAgreeTerms = (e) => {
     e.preventDefault();
+    if (password.length < 6) {
+      alert("The password must have at least 6 characters.");
+      return;
+    }
     setShowTermsAlert(false);
-    // Aqui você pode chamar a função createUserWithEmailAndPassword
+
     createUserWithEmailAndPassword(email, password)
       .then((userCredential) => {
-        // Se o usuário for criado com sucesso, você pode acessar as informações do usuário aqui
         const user = userCredential.user;
-        console.log("User created:", user);
-
-        // Aqui você pode adicionar qualquer outra lógica necessária após o cadastro do usuário
+        const userUid = user.uid;
+        createUser(userUid);
       })
       .catch((error) => {
-        // Se houver um erro ao criar o usuário, você pode lidar com ele aqui
-        const errorMessage = error.message;
-        console.error("Error creating user:", errorMessage);
+        console.error("Error creating user:", error);
       });
   };
 
@@ -135,6 +154,18 @@ export default function Register() {
               sx={{ mt: 3 }}
             >
               <Grid container spacing={2}>
+                <Grid item xs={12}>
+                  <TextField
+                    required
+                    fullWidth
+                    id="name"
+                    label="Name"
+                    name="email"
+                    autoComplete="name"
+                    onChange={(e) => setName(e.target.value)}
+                  />
+                </Grid>
+
                 <Grid item xs={12}>
                   <TextField
                     required
