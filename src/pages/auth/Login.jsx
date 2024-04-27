@@ -75,12 +75,12 @@ export default function Login() {
           item
           xs={12}
           sx={{
-            height: { md: "50vh", sm: "33vh" }, // Gradient background height
+            height: { md: "50vh", sm: "33vh", xs: "33vh" }, // Gradient background height
             background:
               "linear-gradient(to right, rgba(0,0,0,1) 25%, rgba(0,0,255,0.5) 100%)",
           }}
         >
-          <Grid container sx={{ height:"100%", height: { xs: "50%"} }}>
+          <Grid container sx={{ height: "50%" }}>
             <Grid
               item
               xs={12}
