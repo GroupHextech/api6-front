@@ -75,15 +75,16 @@ export default function Login() {
           item
           xs={12}
           sx={{
-            height: "50vh", // Gradient background height
+            height: { md: "50vh", sm: "33vh" }, // Gradient background height
             background:
               "linear-gradient(to right, rgba(0,0,0,1) 25%, rgba(0,0,255,0.5) 100%)",
           }}
         >
-          <Grid container sx={{ height: "100%" }}>
+          <Grid container sx={{ height:"100%", height: { xs: "50%"} }}>
             <Grid
               item
-              xs={4}
+              xs={12}
+              md={4}
               sx={{
                 display: "flex",
                 flexDirection: "column",
@@ -103,7 +104,8 @@ export default function Login() {
             </Grid>
             <Grid
               item
-              xs={4}
+              xs={12}
+              md={4}
               sx={{
                 display: "flex",
                 flexDirection: "column",
@@ -122,7 +124,7 @@ export default function Login() {
               >
                 <Box
                   sx={{
-                    minHeight: "100vh",
+                    minHeight: { md: "100vh", xs: "33vh"},
                     display: "flex",
                     justifyContent: "center",
                     alignItems: "center",
@@ -134,7 +136,7 @@ export default function Login() {
                     sx={{
                       position: "relative",
                       width: "100%",
-                      maxWidth: "400px", // Defina a largura máxima do modal aqui
+                      maxWidth: "800px", // Defina a largura máxima do modal aqui
                       padding: "20px",
                       backgroundColor: "#fff",
                       border: "1px solid rgba(0, 0, 0, 0.2)",
@@ -213,7 +215,6 @@ export default function Login() {
                 </Box>
               </Box>
             </Grid>
-            <Grid item xs={4} />
           </Grid>
         </Grid>
       </Grid>
