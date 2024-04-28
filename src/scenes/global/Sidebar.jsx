@@ -6,11 +6,10 @@ import "react-pro-sidebar/dist/css/styles.css";
 import { tokens } from "../../theme";
 
 // ICONS:
-import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
+import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
 import DashboardOutlinedIcon from "@mui/icons-material/DashboardOutlined";
 import MapOutlinedIcon from "@mui/icons-material/MapOutlined";
-import FolderSharedRoundedIcon from '@mui/icons-material/FolderSharedRounded';
-
+// import FolderSharedRoundedIcon from "@mui/icons-material/FolderSharedRounded";
 import MenuOutlinedIcon from "@mui/icons-material/MenuOutlined";
 
 const Item = ({ title, to, icon, selected, setSelected }) => {
@@ -35,7 +34,7 @@ const Sidebar = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [selected, setSelected] = useState("Dashboard");
+  const [selected, setSelected] = useState("Home");
 
   return (
     <Box
@@ -142,15 +141,15 @@ const Sidebar = () => {
               selected={selected}
               setSelected={setSelected}
             />
-            <Item
+            {/*<Item
               title="Your data"
               // to="/"
               icon={<FolderSharedRoundedIcon />}
               // selected={selected}
               // setSelected={setSelected}
             />
-
-            {/* <Typography
+            
+             <Typography
               variant="h6"
               color={colors.grey[300]}
               sx={{ m: "15px 0 5px 20px" }}
