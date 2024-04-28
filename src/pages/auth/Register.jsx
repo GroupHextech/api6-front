@@ -49,15 +49,6 @@ export default function Register() {
   const [createUserWithEmailAndPassword, user, loading, error] =
     useCreateUserWithEmailAndPassword(auth);
 
-  // function handleSignOut(e) {
-  //   e.preventDefault();
-  //   if (password.length < 6) {
-  //     alert("The password must have at least 6 characters.");
-  //     return;
-  //   }
-  //   createUserWithEmailAndPassword(email, password);
-  // }
-
   if (loading) {
     return <p>carregando...</p>;
   }
