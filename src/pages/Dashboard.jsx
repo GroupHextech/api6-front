@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { Grid } from "@mui/material";
+import { Checkbox, FormControl, Grid, InputLabel, ListItemText, MenuItem, OutlinedInput, Select } from "@mui/material";
 
-import { Box, Button, Typography, useTheme } from "@mui/material";
+import { Box, Button, Typography, useTheme, Stack } from "@mui/material";
 import { tokens } from "../theme";
 
 // COMPONENTS:
@@ -20,18 +20,136 @@ import EmojiEmotionsOutlinedIcon from "@mui/icons-material/EmojiEmotionsOutlined
 import SentimentNeutralOutlinedIcon from "@mui/icons-material/SentimentNeutralOutlined";
 import SentimentDissatisfiedOutlinedIcon from "@mui/icons-material/SentimentDissatisfiedOutlined";
 import CategoriesPieAndBarChart from "../components/charts/CategoriesPieAndBarChart";
+import { SystemUpdateRounded } from "@mui/icons-material";
+
+const ITEM_HEIGHT = 48;
+const ITEM_PADDING_TOP = 8;
+const MenuProps = {
+  PaperProps: {
+    style: {
+      maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
+      width: 250,
+    },
+  },
+};
 
 const Dashboard = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
 
   const [chartType, setChartType] = useState("pie"); // Default chart type
+  const [selectedRegions, setSelectedRegions] = useState(["Todas"]);
+  const [selectedStates, setSelectedStates] = useState(["AC"]);
+
+  const regioesDoBrasil = {
+    Todas: [
+      "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS",
+      "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO"
+    ],
+    Norte: ["AC", "AP", "AM", "PA", "RO", "RR", "TO"],
+    Nordeste: ["AL", "BA", "CE", "MA", "PB", "PE", "PI", "RN", "SE"],
+    CentroOeste: ["DF", "GO", "MT", "MS"],
+    Sudeste: ["ES", "MG", "RJ", "SP"],
+    Sul: ["PR", "RS", "SC"]
+  };
+
+  const handleChangeRegion = (event, child) => {
+    let selectedOptions = event.target.value;
+
+    if (child.props.value === 'Todas') {
+      setSelectedRegions(Object.keys(regioesDoBrasil))
+      return;
+    }
+
+    selectedOptions = selectedOptions.filter(item => item !== 'Todas')
+
+    setSelectedRegions(
+      typeof selectedOptions === 'string' ? selectedOptions.split(',') : selectedOptions,
+    );
+  };
+
+  const handleChangeEstado = (event) => {
+    const selectedOptions = event.target.value;
+    setSelectedStates(
+      typeof selectedOptions === 'string' ? selectedOptions.split(',') : selectedOptions,
+    );
+  };
 
   return (
     <Box m="20px">
       {/* HEADER */}
       <Box display="flex" justifyContent="space-between" alignItems="center">
         <Header title="DASHBOARD" subtitle="Welcome to your dashboard" />
+
+        <Stack direction="row" spacing={2}>
+          <Button
+            variant="contained"
+            color="primary"
+            endIcon={<EmojiEmotionsOutlinedIcon style={{ color: '#98FF98' }} />}
+          >
+            Positivo
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            endIcon={<SentimentNeutralOutlinedIcon style={{ color: '#FFFF99' }} />}
+          >
+            Neutro
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            endIcon={<SentimentDissatisfiedOutlinedIcon style={{ color: '#E0115F' }} />}
+          >
+            Negativo
+          </Button>
+        </Stack>
+
+        <div>
+          <FormControl sx={{ m: 1, width: 300 }}>
+            <InputLabel id="regiao-multiple-checkbox-label">Região</InputLabel>
+            <Select
+              labelId="regiao-multiple-checkbox-label"
+              id="regiao-multiple-checkbox"
+              multiple
+              value={selectedRegions}
+              onChange={handleChangeRegion}
+              input={<OutlinedInput label="Tag" />}
+              renderValue={(selected) => selected.includes('Todas') ? 'Todas as regiões' : selected.join(', ')}
+              MenuProps={MenuProps}
+            >
+              {Object.keys(regioesDoBrasil).map((region) => (
+                <MenuItem key={region} value={region}>
+                  <Checkbox checked={selectedRegions.indexOf(region) > -1} />
+                  <ListItemText primary={region} />
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </div>
+
+        <div>
+          <FormControl sx={{ m: 1, width: 300 }}>
+            <InputLabel id="estado-multiple-checkbox-label">Estado</InputLabel>
+            <Select
+              labelId="estado-multiple-checkbox-label"
+              id="estado-multiple-checkbox"
+              multiple
+              value={selectedStates}
+              onChange={handleChangeEstado}
+              input={<OutlinedInput label="Tag" />}
+              renderValue={(selected) => selected.join(', ')}
+              MenuProps={MenuProps}
+            >
+              {regioesDoBrasil.Todas.map((state) => (
+                <MenuItem key={state} value={state}>
+                  <Checkbox checked={selectedStates.indexOf(state) > -1} />
+                  <ListItemText primary={state} />
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </div>
 
         <Box>
           <Button
@@ -217,7 +335,7 @@ const Dashboard = () => {
         // mt="25px"
         >
           <Typography variant="h5" fontWeight="600">
-          Number of sales per month
+            Number of sales per month
           </Typography>
           <Box height="250px" m="0 0 0 0">
             <MonthlyPeriodChart />
