@@ -41,11 +41,8 @@ export default function Map() {
     setActiveStates(regioesDoBrasil[element.target.value]);
   }
 
-  const handleStateRemove = (element) => {
-    // const index = activeStates.indexOf(element.target.label);
-    // const states = activeStates.splice(1, index);
-    // setActiveStates(states);
-
+  const handleStateRemove = (itemToRemove) => {
+    setActiveStates((states) => states.filter((state) => state !== itemToRemove));
   }
 
   return (
@@ -130,7 +127,7 @@ export default function Map() {
                     <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
                       {
                         activeStates.map(estado => 
-                          <Chip size="small" label={estado} key={estado} variant="outlined" onDelete={handleStateRemove} />
+                          <Chip size="small" label={estado} key={estado} variant="outlined" onDelete={() => handleStateRemove(estado)} />
                         )
                       }
                     </Stack>
