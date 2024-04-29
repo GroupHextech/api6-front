@@ -11,6 +11,7 @@ import FormControl from '@mui/material/FormControl';
 import FormLabel from '@mui/material/FormLabel';
 import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
+import CleaningServicesIcon from '@mui/icons-material/CleaningServices';
 
 export default function Map() {
   const [activeMap, setActiveMap] = React.useState("Vendas (Geral)");
@@ -28,13 +29,13 @@ export default function Map() {
     Norte: ["AC", "AP", "AM", "PA", "RO", "RR", "TO"],
     Nordeste: ["AL", "BA", "CE", "MA", "PB", "PE", "PI", "RN", "SE"],
     CentroOeste: ["DF", "GO", "MT", "MS"],
-    Sudeste: ["ES", "MG", "RJ", "SP"],  
+    Sudeste: ["ES", "MG", "RJ", "SP"],
     Sul: ["PR", "RS", "SC"]
   };
 
   // Exemplo de acesso às siglas dos estados de uma região específica
   console.log("Siglas dos Estados da Região Nordeste:", regioesDoBrasil.Nordeste);
-  
+
   const handleSelectRegionChange = (element) => {
     console.log('estados a serem exibidos', regioesDoBrasil[element.target.value])
     setSelectedRegion(element.target.value);
@@ -64,7 +65,7 @@ export default function Map() {
             </h1>
           </Paper>
         </div>
-        
+
         {/* CONTEUDO */}
         <div style={{ display: "flex", flexDirection: "row" }}>
           <Paper
@@ -123,10 +124,10 @@ export default function Map() {
                 <div>
                   <h2>Estados:</h2>
                   <h3>Se preferir, escolha por estado desejado no mapa ao lado</h3>
-                  <div style={{width: 550}}>
+                  <div style={{ width: 550 }}>
                     <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
                       {
-                        activeStates.map(estado => 
+                        activeStates.map(estado =>
                           <Chip size="small" label={estado} key={estado} variant="outlined" onDelete={() => handleStateRemove(estado)} />
                         )
                       }
@@ -134,6 +135,12 @@ export default function Map() {
                   </div>
                 </div>
                 <div>
+                  <Button
+                    variant="contained" size="medium" style={{ marginTop: '20px', marginRight: '20px' }}
+                    endIcon={<CleaningServicesIcon style={{ color: '#70d8bd' }} />}
+                  >
+                    Clear
+                  </Button>
                   <Button variant="contained" size="medium" style={{ marginTop: '20px' }}>
                     Buscar
                   </Button>

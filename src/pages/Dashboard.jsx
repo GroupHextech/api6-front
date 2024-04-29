@@ -20,6 +20,7 @@ import EmojiEmotionsOutlinedIcon from "@mui/icons-material/EmojiEmotionsOutlined
 import SentimentNeutralOutlinedIcon from "@mui/icons-material/SentimentNeutralOutlined";
 import SentimentDissatisfiedOutlinedIcon from "@mui/icons-material/SentimentDissatisfiedOutlined";
 import CategoriesPieAndBarChart from "../components/charts/CategoriesPieAndBarChart";
+import CleaningServicesIcon from '@mui/icons-material/CleaningServices';
 import { SystemUpdateRounded } from "@mui/icons-material";
 
 const ITEM_HEIGHT = 48;
@@ -39,19 +40,20 @@ const Dashboard = () => {
 
   const [chartType, setChartType] = useState("pie"); // Default chart type
   const [selectedRegions, setSelectedRegions] = useState(["Todas"]);
-  const [selectedStates, setSelectedStates] = useState(["AC"]);
+  const [selectedStates, setSelectedStates] = useState(["São Paulo"]);
 
   const regioesDoBrasil = {
     Todas: [
-      "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS",
-      "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO"
+      "Acre", "Alagoas", "Amapá", "Amazonas", "Bahia", "Ceará", "Distrito Federal", "Espírito Santo", "Goiás", "Maranhão", "Mato Grosso", "Mato Grosso do Sul",
+      "Minas Gerais", "Pará", "Paraíba", "Paraná", "Pernambuco", "Piauí", "Rio de Janeiro", "Rio Grande do Norte", "Rio Grande do Sul", "Rondônia", "Roraima", "Santa Catarina", "São Paulo", "Sergipe", "Tocantins"
     ],
-    Norte: ["AC", "AP", "AM", "PA", "RO", "RR", "TO"],
-    Nordeste: ["AL", "BA", "CE", "MA", "PB", "PE", "PI", "RN", "SE"],
-    CentroOeste: ["DF", "GO", "MT", "MS"],
-    Sudeste: ["ES", "MG", "RJ", "SP"],
-    Sul: ["PR", "RS", "SC"]
+    Norte: ["Acre", "Amapá", "Amazonas", "Pará", "Rondônia", "Roraima", "Tocantins"],
+    Nordeste: ["Alagoas", "Bahia", "Ceará", "Maranhão", "Paraíba", "Pernambuco", "Piauí", "Rio Grande do Norte", "Sergipe"],
+    CentroOeste: ["Distrito Federal", "Goiás", "Mato Grosso", "Mato Grosso do Sul"],
+    Sudeste: ["Espírito Santo", "Minas Gerais", "Rio de Janeiro", "São Paulo"],
+    Sul: ["Paraná", "Rio Grande do Sul", "Santa Catarina"]
   };
+  
 
   const handleChangeRegion = (event, child) => {
     let selectedOptions = event.target.value;
@@ -106,7 +108,7 @@ const Dashboard = () => {
         </Stack>
 
         <div>
-          <FormControl sx={{ m: 1, width: 300 }}>
+          <FormControl sx={{ m: 1, width: 300 }} size="small">
             <InputLabel id="regiao-multiple-checkbox-label">Região</InputLabel>
             <Select
               labelId="regiao-multiple-checkbox-label"
@@ -129,7 +131,7 @@ const Dashboard = () => {
         </div>
 
         <div>
-          <FormControl sx={{ m: 1, width: 300 }}>
+          <FormControl sx={{ m: 1, width: 300 }} size="small">
             <InputLabel id="estado-multiple-checkbox-label">Estado</InputLabel>
             <Select
               labelId="estado-multiple-checkbox-label"
@@ -150,6 +152,15 @@ const Dashboard = () => {
             </Select>
           </FormControl>
         </div>
+
+          <Button
+            variant="contained"
+            color="primary"
+            endIcon={<CleaningServicesIcon style={{ color: '#70d8bd' }} />}
+          >
+            Clear
+          </Button>
+
 
         <Box>
           <Button
