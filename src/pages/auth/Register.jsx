@@ -211,7 +211,9 @@ const handleAgreeTerms = (e) => {
                     }}
                   >
                     <Box>
-                      <img src="../../assets/dino-icon.svg" width={"55px"} />{" "}
+                      <div style={{width:"100%", justifyContent:"center", display:"flex"}}>
+                        <img src="../../assets/dino-icon.svg" width={"80px"} />{" "}
+                      </div>
                       <Typography component="h1" variant="h5">
                         Create Account
                       </Typography>
