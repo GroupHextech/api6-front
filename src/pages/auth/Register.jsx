@@ -22,6 +22,7 @@ import { serverTimestamp } from "@firebase/firestore";
 
 import TermsAndConditions from "../../components/register/TermsAndConditions";
 import { Navigate } from "react-router-dom";
+import { Image } from "@mui/icons-material";
 
 function Copyright(props) {
   return (
@@ -52,8 +53,11 @@ export default function Register() {
   const [termOfEmail, setTermOfEmail] = useState(true);
   const [termOfSms, setTermOfSms] = useState(true);
   const [showTermsAlert, setShowTermsAlert] = useState(false);
-  const navigate = useNavigate();
+  const [jobTitle, setJobTitle] = useState("");
+  const [department, setDepartment] = useState("");
+  const [employId, setEmployId] = useState("");
 
+  const navigate = useNavigate();
 
   const [createUserWithEmailAndPassword, user, loading, error] =
     useCreateUserWithEmailAndPassword(auth);
@@ -62,6 +66,7 @@ export default function Register() {
     return <p>Carregando...</p>;
   }
 
+  //nome, email, cargo, departamento, registro 
   const userCollectionRef = collection(firestore, "users");
 
   async function createUser(uid) {
@@ -71,9 +76,13 @@ export default function Register() {
         useTerm: true,
         name,
         email,
+        jobTitle,
+        department,
+        employId,
         phone,
         termOfEmail,
         termOfSms,
+        role: "user",
         createdAt: serverTimestamp(), 
       });
       console.log("User created successfully!");
@@ -202,9 +211,7 @@ const handleAgreeTerms = (e) => {
                     }}
                   >
                     <Box>
-                      <Avatar sx={{ m: 1, bgcolor: "secondary.main" }}>
-                        <LockOutlinedIcon />
-                      </Avatar>
+                      <img src="../../assets/dino-icon.svg" width={"55px"} />{" "}
                       <Typography component="h1" variant="h5">
                         Create Account
                       </Typography>
@@ -214,16 +221,53 @@ const handleAgreeTerms = (e) => {
                         onSubmit={handleSubmit}
                         sx={{ mt: 3 }}
                       >
-                        <Grid container spacing={2}>
-                          <Grid item xs={12}>
+                      
+                        <Grid container spacing={1}>
+                          <Grid item xs={8}>
                             <TextField
                               required
                               fullWidth
                               id="name"
                               label="Name"
-                              name="email"
+                              name="name"
                               autoComplete="name"
                               onChange={(e) => setName(e.target.value)}
+                            />
+                            
+                          </Grid>
+
+                          <Grid item xs={4}>
+                            <TextField
+                              required
+                              fullWidth
+                              id="employId"
+                              label="Registration Number"
+                              name="employId"
+                              autoComplete="employId"
+                              onChange={(e) => setEmployId(e.target.value)}
+                            />
+                            
+                          </Grid>
+
+                          <Grid item xs={12} sm={6}>
+                          <TextField
+                              required
+                              fullWidth
+                              id="department"
+                              label="Department"
+                              name="department"
+                              onChange={(e) => setDepartment(e.target.value)}
+                            />
+                          </Grid>
+
+                          <Grid item xs={12} sm={6}>
+                            <TextField  
+                              required                   
+                              fullWidth
+                              id="jobTitle"
+                              label="Job Title"
+                              name="job"
+                              onChange={(e) => setJobTitle(e.target.value)}
                             />
                           </Grid>
 
@@ -248,7 +292,7 @@ const handleAgreeTerms = (e) => {
                               onChange={(e) => setPhone(e.target.value)}
                             />
                           </Grid>
-                          <Grid item xs={12}>
+                          <Grid item xs={6}>
                             <TextField
                               required
                               fullWidth
@@ -260,7 +304,7 @@ const handleAgreeTerms = (e) => {
                               onChange={(e) => setPassword(e.target.value)}
                             />
                           </Grid>
-                          <Grid item xs={12}>
+                          <Grid item xs={6}>
                             <TextField
                               required
                               fullWidth
