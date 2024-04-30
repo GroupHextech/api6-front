@@ -145,10 +145,10 @@ export default function Login() {
                     }}
                   >
                     <Box>
-                      <Avatar sx={{ m: 1, bgcolor: "secondary.main" }}>
-                        <LockOutlinedIcon />
-                      </Avatar>
-                      <Typography component="h1" variant="h5">
+                      <div style={{width:"100%", justifyContent:"center", display:"flex"}}>
+                        <img src="../../assets/dino-icon.svg" width={"80px"} />{" "}
+                      </div>
+                      <Typography component="h1" variant="h5" sx={{justifyContent:"center", display:"flex"}}>
                         Sign in
                       </Typography>
                       <Box

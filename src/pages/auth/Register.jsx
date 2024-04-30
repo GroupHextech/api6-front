@@ -16,8 +16,13 @@ import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { useCreateUserWithEmailAndPassword } from "react-firebase-hooks/auth";
 import { auth, firestore } from "../../services/firebaseConfig";
 import { doc, setDoc, addDoc, collection } from "@firebase/firestore";
+import { useNavigate } from "react-router-dom";
+import { serverTimestamp } from "@firebase/firestore";
+
 
 import TermsAndConditions from "../../components/register/TermsAndConditions";
+import { Navigate } from "react-router-dom";
+import { Image } from "@mui/icons-material";
 
 function Copyright(props) {
   return (
@@ -41,10 +46,18 @@ const defaultTheme = createTheme();
 
 export default function Register() {
   const [email, setEmail] = useState("");
+  const [phone , setPhone] = useState("")
   const [password, setPassword] = useState("");
+  const [confirmationPassword, setConfirmationPassword] = useState("");
   const [name, setName] = useState("");
-  const [term, setTerm] = useState(true);
+  const [termOfEmail, setTermOfEmail] = useState(true);
+  const [termOfSms, setTermOfSms] = useState(true);
   const [showTermsAlert, setShowTermsAlert] = useState(false);
+  const [jobTitle, setJobTitle] = useState("");
+  const [department, setDepartment] = useState("");
+  const [employId, setEmployId] = useState("");
+
+  const navigate = useNavigate();
 
   const [createUserWithEmailAndPassword, user, loading, error] =
     useCreateUserWithEmailAndPassword(auth);
@@ -53,15 +66,24 @@ export default function Register() {
     return <p>Carregando...</p>;
   }
 
+  //nome, email, cargo, departamento, registro 
   const userCollectionRef = collection(firestore, "users");
 
   async function createUser(uid) {
     const userRef = doc(userCollectionRef, uid); // Referência ao documento usando o uid como id
     try {
       await setDoc(userRef, {
+        useTerm: true,
         name,
         email,
-        term: true, // Set term to true
+        jobTitle,
+        department,
+        employId,
+        phone,
+        termOfEmail,
+        termOfSms,
+        role: "user",
+        createdAt: serverTimestamp(), 
       });
       console.log("User created successfully!");
     } catch (error) {
@@ -78,24 +100,38 @@ export default function Register() {
     setShowTermsAlert(true);
   };
 
-  const handleAgreeTerms = (e) => {
-    e.preventDefault();
-    if (password.length < 6) {
-      alert("The password must have at least 6 characters.");
-      return;
-    }
-    setShowTermsAlert(false);
-
-    createUserWithEmailAndPassword(email, password)
-      .then((userCredential) => {
-        const user = userCredential.user;
-        const userUid = user.uid;
-        createUser(userUid);
-      })
-      .catch((error) => {
-        console.error("Error creating user:", error);
-      });
+  const handleCheckboxEmailChange = (event) => {
+    setTermOfEmail(event.target.checked);
   };
+  const handleCheckboxSmsChange = (event) => {
+    setTermOfSms(event.target.checked); 
+  };
+
+const handleAgreeTerms = (e) => {
+  e.preventDefault();
+  if (password.length < 6) {
+    alert("The password must have at least 6 characters.");
+    return;
+  }
+  if (password !== confirmationPassword) {
+    alert("Passwords do not match. Please enter matching passwords in both fields.");
+    return;
+  }
+  setShowTermsAlert(false);
+
+
+  createUserWithEmailAndPassword(email, password)
+    .then((userCredential) => {
+      const user = userCredential.user;
+      const userUid = user.uid;
+      createUser(userUid);
+      navigate("/");
+    })
+    .catch((error) => {
+      console.error("Error creating user:", error);
+    });
+};
+
 
   return (
     <ThemeProvider theme={defaultTheme}>
@@ -175,9 +211,9 @@ export default function Register() {
                     }}
                   >
                     <Box>
-                      <Avatar sx={{ m: 1, bgcolor: "secondary.main" }}>
-                        <LockOutlinedIcon />
-                      </Avatar>
+                      <div style={{width:"100%", justifyContent:"center", display:"flex"}}>
+                        <img src="../../assets/dino-icon.svg" width={"80px"} />{" "}
+                      </div>
                       <Typography component="h1" variant="h5">
                         Create Account
                       </Typography>
@@ -187,21 +223,58 @@ export default function Register() {
                         onSubmit={handleSubmit}
                         sx={{ mt: 3 }}
                       >
-                        <Grid container spacing={2}>
-                          <Grid item xs={12}>
+                      
+                        <Grid container spacing={1}>
+                          <Grid item xs={8}>
                             <TextField
                               required
                               fullWidth
                               id="name"
                               label="Name"
-                              name="email"
+                              name="name"
                               autoComplete="name"
                               onChange={(e) => setName(e.target.value)}
                             />
+                            
                           </Grid>
 
-                          <Grid item xs={12}>
+                          <Grid item xs={4}>
                             <TextField
+                              required
+                              fullWidth
+                              id="employId"
+                              label="Registration Number"
+                              name="employId"
+                              autoComplete="employId"
+                              onChange={(e) => setEmployId(e.target.value)}
+                            />
+                            
+                          </Grid>
+
+                          <Grid item xs={12} sm={6}>
+                          <TextField
+                              required
+                              fullWidth
+                              id="department"
+                              label="Department"
+                              name="department"
+                              onChange={(e) => setDepartment(e.target.value)}
+                            />
+                          </Grid>
+
+                          <Grid item xs={12} sm={6}>
+                            <TextField  
+                              required                   
+                              fullWidth
+                              id="jobTitle"
+                              label="Job Title"
+                              name="job"
+                              onChange={(e) => setJobTitle(e.target.value)}
+                            />
+                          </Grid>
+
+                          <Grid item xs={12} sm={6}>
+                          <TextField
                               required
                               fullWidth
                               id="email"
@@ -211,7 +284,17 @@ export default function Register() {
                               onChange={(e) => setEmail(e.target.value)}
                             />
                           </Grid>
-                          <Grid item xs={12}>
+                          <Grid item xs={12} sm={6}>
+                            <TextField                     
+                              fullWidth
+                              id="phone"
+                              label="Phone Number"
+                              name="phone"
+                              autoComplete="phone"
+                              onChange={(e) => setPhone(e.target.value)}
+                            />
+                          </Grid>
+                          <Grid item xs={6}>
                             <TextField
                               required
                               fullWidth
@@ -223,15 +306,43 @@ export default function Register() {
                               onChange={(e) => setPassword(e.target.value)}
                             />
                           </Grid>
+                          <Grid item xs={6}>
+                            <TextField
+                              required
+                              fullWidth
+                              name="Confirm"
+                              label="Confirm Password"
+                              type="password"
+                              id="confirmPassword"
+                              autoComplete="new-password"
+                              onChange={(e) => setConfirmationPassword(e.target.value)}
+
+                            />
+                          </Grid>
                           <Grid item xs={12}>
                             <FormControlLabel
                               control={
                                 <Checkbox
                                   value="allowExtraEmails"
                                   color="primary"
+                                  checked={termOfEmail}
+                                  onChange={handleCheckboxEmailChange}
                                 />
                               }
                               label="I want to receive inspiration, marketing promotions and updates via email."
+                            />
+                          </Grid>
+                          <Grid item xs={12}>
+                            <FormControlLabel
+                              control={
+                                <Checkbox
+                                  value="allowExtraSms"
+                                  color="primary"
+                                  checked={termOfSms}
+                                  onChange={handleCheckboxSmsChange}
+                                />
+                              }
+                              label="I want to receive updates via SMS."
                             />
                           </Grid>
                         </Grid>
