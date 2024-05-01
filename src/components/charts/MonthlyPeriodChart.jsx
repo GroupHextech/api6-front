@@ -10,10 +10,8 @@ export default function Chart() {
     const theme = useTheme();
     const colors = tokens(theme.palette.mode);
 
-    console.log(dados)
 
     if (true) {
-        console.log("TESTE 1");
         return <>
             <ResponsiveBar
                 data={dados}
