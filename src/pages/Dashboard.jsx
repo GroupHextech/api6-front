@@ -39,42 +39,45 @@ const Dashboard = () => {
   const colors = tokens(theme.palette.mode);
 
   const [chartType, setChartType] = useState("pie"); // Default chart type
-  const [selectedRegions, setSelectedRegions] = useState(["Todas"]);
-  const [selectedStates, setSelectedStates] = useState(["São Paulo"]);
+  const [selectedRegions, setSelectedRegions] = useState([]);
+  const [selectedStates, setSelectedStates] = useState([]);
 
   const regioesDoBrasil = {
-    Todas: [
-      "Acre", "Alagoas", "Amapá", "Amazonas", "Bahia", "Ceará", "Distrito Federal", "Espírito Santo", "Goiás", "Maranhão", "Mato Grosso", "Mato Grosso do Sul",
-      "Minas Gerais", "Pará", "Paraíba", "Paraná", "Pernambuco", "Piauí", "Rio de Janeiro", "Rio Grande do Norte", "Rio Grande do Sul", "Rondônia", "Roraima", "Santa Catarina", "São Paulo", "Sergipe", "Tocantins"
+    "Todas": [
+      "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS",
+      "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO"
     ],
-    Norte: ["Acre", "Amapá", "Amazonas", "Pará", "Rondônia", "Roraima", "Tocantins"],
-    Nordeste: ["Alagoas", "Bahia", "Ceará", "Maranhão", "Paraíba", "Pernambuco", "Piauí", "Rio Grande do Norte", "Sergipe"],
-    CentroOeste: ["Distrito Federal", "Goiás", "Mato Grosso", "Mato Grosso do Sul"],
-    Sudeste: ["Espírito Santo", "Minas Gerais", "Rio de Janeiro", "São Paulo"],
-    Sul: ["Paraná", "Rio Grande do Sul", "Santa Catarina"]
+    "norte": ["AC", "AP", "AM", "PA", "RO", "RR", "TO"],
+    "nordeste": ["AL", "BA", "CE", "MA", "PB", "PE", "PI", "RN", "SE"],
+    "centro-oeste": ["DF", "GO", "MT", "MS"],
+    "sudeste": ["ES", "MG", "RJ", "SP"],
+    "sul": ["PR", "RS", "SC"]
   };
   
 
   const handleChangeRegion = (event, child) => {
-    let selectedOptions = event.target.value;
-
-    if (child.props.value === 'Todas') {
-      setSelectedRegions(Object.keys(regioesDoBrasil))
-      return;
+    const selectedRegions = event.target.value;
+    let selectedStates = [];
+  
+    // Se a opção 'Todas' estiver selecionada, limpar todas as seleções de região
+    if (selectedRegions.includes('Todas')) {
+      setSelectedRegions(['Todas']);
+      return; // Não é necessário enviar parâmetros de região
     }
-
-    selectedOptions = selectedOptions.filter(item => item !== 'Todas')
-
-    setSelectedRegions(
-      typeof selectedOptions === 'string' ? selectedOptions.split(',') : selectedOptions,
-    );
+  
+    // Obter a lista de estados correspondentes a todas as regiões selecionadas
+    selectedRegions.forEach(region => {
+      selectedStates = selectedStates.concat(regioesDoBrasil[region]);
+    });
+  
+    // Atualizar os estados selecionados e enviar apenas os estados para o backend
+    setSelectedRegions(selectedRegions);
+    setSelectedStates(selectedStates);
   };
 
   const handleChangeEstado = (event) => {
     const selectedOptions = event.target.value;
-    setSelectedStates(
-      typeof selectedOptions === 'string' ? selectedOptions.split(',') : selectedOptions,
-    );
+    setSelectedStates(selectedOptions);
   };
 
   return (
@@ -332,7 +335,7 @@ const Dashboard = () => {
             </Box>
           </Box>
           <Box height="250px" m="0 0 0 0">
-            <CategoriesPieAndBarChart chartType={chartType} />
+            <CategoriesPieAndBarChart chartType={chartType} selectedStates={selectedStates} />
           </Box>
         </Box>
         {/* MONTHLY PERIOD CHART */}

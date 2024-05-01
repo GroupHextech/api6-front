@@ -45,7 +45,7 @@ function mapearDadosCategoriasLv2(categorias) {
   }, []);
 }
 
-const CategoriesPieAndBarChart = ({ chartType }) => {
+const CategoriesPieAndBarChart = ({ chartType, selectedStates }) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
 
@@ -55,7 +55,7 @@ const CategoriesPieAndBarChart = ({ chartType }) => {
   useEffect(() => {
     async function handleCategoriesData() {
       try {
-        const data = await getCategories();
+        const data = await getCategories(selectedStates);
 
         const dadosProcessados = processarDados(data);
         const formattedData = dadosProcessados.map((categoria) => ({
@@ -74,7 +74,7 @@ const CategoriesPieAndBarChart = ({ chartType }) => {
     }
 
     handleCategoriesData();
-  }, []);
+  }, [selectedStates]);
 
   return (
     <>
