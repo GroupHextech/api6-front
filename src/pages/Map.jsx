@@ -12,8 +12,12 @@ import FormLabel from '@mui/material/FormLabel';
 import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
 import CleaningServicesIcon from '@mui/icons-material/CleaningServices';
+import { Typography, useTheme } from "@mui/material";
+import { tokens } from "../theme";
 
 export default function Map() {
+  const theme = useTheme();
+  const colors = tokens(theme.palette.mode);
   const [activeMap, setActiveMap] = React.useState("Vendas (Geral)");
   const [selectedRegion, setSelectedRegion] = React.useState("Todas");
   const [activeStates, setActiveStates] = React.useState([
@@ -53,22 +57,37 @@ export default function Map() {
       >
         {/*  CABEÇALHO */}
         <div>
-          <Paper
+          <Box
+            gridColumn="span 3"
+            backgroundColor={colors.primary[400]}
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
             sx={{
               marginLeft: 3,
-              justifyContent: "center",
+              justifyContent: "start",
               alignContent: "center",
             }}
           >
-            <h1 style={{ textAlign: "center" }}>
+            <Typography
+              variant="h2"
+              color={colors.grey[100]}
+              fontWeight="bold"
+              sx={{ m: "20px 0 20px 15px" }}
+            >
               Dados Geográficos {activeMap}
-            </h1>
-          </Paper>
+            </Typography>
+          </Box>
         </div>
 
         {/* CONTEUDO */}
         <div style={{ display: "flex", flexDirection: "row" }}>
-          <Paper
+          <Box
+            gridColumn="span 3"
+            backgroundColor={colors.primary[400]}
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
             sx={{
               p: 2,
               display: "flex",
@@ -83,7 +102,14 @@ export default function Map() {
             </Button> */}
             <div>
               <div>
-                <h2>Filtragem por sentimentos</h2>
+                <Typography
+                  variant="h3"
+                  color={colors.grey[100]}
+                  fontWeight="bold"
+                  sx={{ m: "10px 0 0 0" }}
+                >
+                  Filtragem por sentimentos
+                </Typography>
                 <div>
                   <FormControl>
                     <FormLabel id="demo-row-radio-buttons-group-label">Selecione os sentimentos que deseja analisar.</FormLabel>
@@ -149,8 +175,13 @@ export default function Map() {
 
             </div>
 
-          </Paper>
-          <Paper
+          </Box>
+          <Box
+            gridColumn="span 3"
+            backgroundColor={colors.primary[400]}
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
             sx={{
               p: 2,
               display: "flex",
@@ -160,7 +191,7 @@ export default function Map() {
             }}
           >
             <HeatMapChart selectedStates={activeStates} />
-          </Paper>
+          </Box>
         </div>
       </Box>
     </Box>
