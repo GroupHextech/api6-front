@@ -47,15 +47,15 @@ const Dashboard = () => {
   const [selectedStates, setSelectedStates] = useState([]);
 
   const handleClearFilters = () => {
-    setSelectedRegions(["Todas"]);
-    setSelectedStates(["São Paulo"]);
+    setSelectedRegions([]);
+    setSelectedStates([]);
     setFeeling("");
   };
 
   const regioesDoBrasil = {
-    "Todas": [
-      "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS",
-      "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO"
+    Todas: [
+      "Acre", "Alagoas", "Amapá", "Amazonas", "Bahia", "Ceará", "Distrito Federal", "Espírito Santo", "Goiás", "Maranhão", "Mato Grosso", "Mato Grosso do Sul",
+      "Minas Gerais", "Pará", "Paraíba", "Paraná", "Pernambuco", "Piauí", "Rio de Janeiro", "Rio Grande do Norte", "Rio Grande do Sul", "Rondônia", "Roraima", "Santa Catarina", "São Paulo", "Sergipe", "Tocantins"
     ],
     Norte: ["Acre", "Amapá", "Amazonas", "Pará", "Rondônia", "Roraima", "Tocantins"],
     Nordeste: ["Alagoas", "Bahia", "Ceará", "Maranhão", "Paraíba", "Pernambuco", "Piauí", "Rio Grande do Norte", "Sergipe"],
@@ -131,20 +131,19 @@ const Dashboard = () => {
       setAllRegionsSelected(!allRegionsSelected);
       return;
     }
-  
-    // Obter a lista de estados correspondentes a todas as regiões selecionadas
-    selectedRegions.forEach(region => {
-      selectedStates = selectedStates.concat(regioesDoBrasil[region]);
-    });
-  
-    // Atualizar os estados selecionados e enviar apenas os estados para o backend
-    setSelectedRegions(selectedRegions);
-    setSelectedStates(selectedStates);
+
+    selectedOptions = selectedOptions.filter(item => item !== 'Todas')
+
+    setSelectedRegions(
+      typeof selectedOptions === 'string' ? selectedOptions.split(',') : selectedOptions,
+    );
   };
 
   const handleChangeEstado = (event) => {
     const selectedOptions = event.target.value;
-    setSelectedStates(selectedOptions);
+    setSelectedStates(
+      typeof selectedOptions === 'string' ? selectedOptions.split(',') : selectedOptions,
+    );
   };
 
   const handleFeelingClick = (value) => {
@@ -157,7 +156,7 @@ const Dashboard = () => {
   return (
     <Box m="20px">
       {/* HEADER */}
-      <Box display="flex" justifyContent="space-between" alignItems="center">
+      <Box display="flex" justifyContent="space-evenly" alignItems="center" flexWrap="wrap">
         <Header title="DASHBOARD" subtitle="Welcome to your dashboard" />
 
         <Stack direction="row" spacing={2}>
@@ -201,7 +200,7 @@ const Dashboard = () => {
 
         <div>
           <FormControl sx={{ m: 1, width: 300 }} size="small">
-            <InputLabel id="regiao-multiple-checkbox-label">Região</InputLabel>
+            <InputLabel id="regiao-multiple-checkbox-label">Region</InputLabel>
             <Select
               labelId="regiao-multiple-checkbox-label"
               id="regiao-multiple-checkbox"
@@ -209,7 +208,7 @@ const Dashboard = () => {
               value={allRegionsSelected ? ['Todas'] : selectedRegions}
               onChange={handleChangeRegion}
               input={<OutlinedInput label="Tag" />}
-              renderValue={(selected) => selected.includes('Todas') ? 'Todas as regiões' : selected.join(', ')}
+              renderValue={(selected) => selected.includes('Todas') ? 'Todas' : selected.join(', ')}
               MenuProps={MenuProps}
             >
 
@@ -225,7 +224,7 @@ const Dashboard = () => {
 
         <div>
           <FormControl sx={{ m: 1, width: 300 }} size="small">
-            <InputLabel id="estado-multiple-checkbox-label">Estado</InputLabel>
+            <InputLabel id="estado-multiple-checkbox-label">State</InputLabel>
             <Select
               labelId="estado-multiple-checkbox-label"
               id="estado-multiple-checkbox"
@@ -424,7 +423,7 @@ const Dashboard = () => {
             </Box>
           </Box>
           <Box height="250px" m="0 0 0 0">
-            <CategoriesPieAndBarChart chartType={chartType} selectedStates={selectedStates} />
+            <CategoriesPieAndBarChart chartType={chartType} filter={filter} />
           </Box>
         </Box>
         {/* MONTHLY PERIOD CHART */}
