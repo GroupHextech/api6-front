@@ -41,10 +41,16 @@ const Dashboard = () => {
 
   const [filter, setFilter] = useState({});
   const [feeling, setFeeling] = useState("");
-  const [feelingData, setFeelingData] = useState({'total': 0, 'positive': 0, 'neutral': 0, 'negative': 0});
+  const [feelingData, setFeelingData] = useState({ 'total': 0, 'positive': 0, 'neutral': 0, 'negative': 0 });
   const [chartType, setChartType] = useState("pie"); // Default chart type
   const [selectedRegions, setSelectedRegions] = useState(["Todas"]);
   const [selectedStates, setSelectedStates] = useState(["São Paulo"]);
+
+  const handleClearFilters = () => {
+    setSelectedRegions(["Todas"]);
+    setSelectedStates(["São Paulo"]);
+    setFeeling("");
+  };
 
   const regioesDoBrasil = {
     Todas: [
@@ -53,11 +59,11 @@ const Dashboard = () => {
     ],
     Norte: ["Acre", "Amapá", "Amazonas", "Pará", "Rondônia", "Roraima", "Tocantins"],
     Nordeste: ["Alagoas", "Bahia", "Ceará", "Maranhão", "Paraíba", "Pernambuco", "Piauí", "Rio Grande do Norte", "Sergipe"],
-    CentroOeste: ["Distrito Federal", "Goiás", "Mato Grosso", "Mato Grosso do Sul"],
+    "Centro-oeste": ["Distrito Federal", "Goiás", "Mato Grosso", "Mato Grosso do Sul"],
     Sudeste: ["Espírito Santo", "Minas Gerais", "Rio de Janeiro", "São Paulo"],
     Sul: ["Paraná", "Rio Grande do Sul", "Santa Catarina"]
   };
-  
+
   const stateAbbreviations = [
     "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS",
     "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO"
@@ -75,7 +81,7 @@ const Dashboard = () => {
   useEffect(() => {
     async function handleFeelingData() {
       let feelingData;
-      
+
       let regions = [];
       let states = [];
 
@@ -96,7 +102,7 @@ const Dashboard = () => {
           feelingData = await getFeeling();
         }
 
-        let finalFeelingData = {'total': 0, 'positive': 0, 'neutral': 0, 'negative': 0};
+        let finalFeelingData = { 'total': 0, 'positive': 0, 'neutral': 0, 'negative': 0 };
 
         feelingData.forEach(row => {
           finalFeelingData[row._id.toLowerCase()] = row.count;
@@ -104,7 +110,7 @@ const Dashboard = () => {
         })
 
         setFeelingData(finalFeelingData);
-        setFilter({states, regions});
+        setFilter({ states, regions });
       } catch (error) {
         console.error("Error fetching feeling data:", error.message);
       }
@@ -117,7 +123,12 @@ const Dashboard = () => {
     let selectedOptions = event.target.value;
 
     if (child.props.value === 'Todas') {
-      setSelectedRegions(Object.keys(regioesDoBrasil))
+      if (allRegionsSelected) {
+        setSelectedRegions([]);
+      } else {
+        setSelectedRegions(Object.keys(regioesDoBrasil));
+      }
+      setAllRegionsSelected(!allRegionsSelected);
       return;
     }
 
@@ -140,6 +151,8 @@ const Dashboard = () => {
     setFeeling(value);
   };
 
+  const [allRegionsSelected, setAllRegionsSelected] = useState(true);
+
   return (
     <Box m="20px">
       {/* HEADER */}
@@ -157,7 +170,7 @@ const Dashboard = () => {
               padding: "10px 20px",
             }}
           >
-            Positivo
+            POSITIVE
           </Button>
           <Button
             variant="contained"
@@ -169,7 +182,7 @@ const Dashboard = () => {
               padding: "10px 20px",
             }}
           >
-            Neutro
+            NEUTRAL
           </Button>
           <Button
             variant="contained"
@@ -181,7 +194,7 @@ const Dashboard = () => {
               padding: "10px 20px",
             }}
           >
-            Negativo
+            NEGATIVE
           </Button>
         </Stack>
 
@@ -192,12 +205,13 @@ const Dashboard = () => {
               labelId="regiao-multiple-checkbox-label"
               id="regiao-multiple-checkbox"
               multiple
-              value={selectedRegions}
+              value={allRegionsSelected ? ['Todas'] : selectedRegions}
               onChange={handleChangeRegion}
               input={<OutlinedInput label="Tag" />}
               renderValue={(selected) => selected.includes('Todas') ? 'Todas as regiões' : selected.join(', ')}
               MenuProps={MenuProps}
             >
+
               {Object.keys(regioesDoBrasil).map((region) => (
                 <MenuItem key={region} value={region}>
                   <Checkbox checked={selectedRegions.indexOf(region) > -1} />
@@ -231,14 +245,16 @@ const Dashboard = () => {
           </FormControl>
         </div>
 
-          <Button
-            variant="contained"
-            color="primary"
-            sx={{
-              padding: "10px 20px",
-            }}
-          ><CleaningServicesIcon style={{ color: '#70d8bd' }}/></Button>
-
+        <Button
+          variant="contained"
+          color="primary"
+          sx={{
+            padding: "10px 20px",
+          }}
+          onClick={handleClearFilters}
+        >
+          <CleaningServicesIcon style={{ color: '#70d8bd' }} />
+        </Button>
 
         <Box>
           <Button
@@ -272,8 +288,8 @@ const Dashboard = () => {
           <StatBox
             title={feelingData.total.toFixed()}
             subtitle="Total Reviews"
-            progress="0.80"
-            increase="+43%"
+            progress="1"
+            increase="100%"
             icon={
               <ReviewsOutlinedIcon
                 sx={{ color: colors.greenAccent[600], fontSize: "26px" }}
@@ -292,8 +308,8 @@ const Dashboard = () => {
           <StatBox
             title={feelingData.positive.toFixed()}
             subtitle="Positives"
-            progress="1"
-            increase="+14%"
+            progress={feelingData.total !== 0 ? feelingData.positive / feelingData.total : 0}
+            increase={`${feelingData.total !== 0 ? ((feelingData.positive * 100) / feelingData.total).toFixed(2) : 0}%`}
             icon={
               <EmojiEmotionsOutlinedIcon
                 sx={{ color: colors.greenAccent[600], fontSize: "26px" }}
@@ -312,8 +328,8 @@ const Dashboard = () => {
           <StatBox
             title={feelingData.neutral.toFixed()}
             subtitle="Neutrals"
-            progress="0.50"
-            increase="+21%"
+            progress={feelingData.total !== 0 ? feelingData.neutral / feelingData.total : 0}
+            increase={`${feelingData.total !== 0 ? ((feelingData.neutral * 100) / feelingData.total).toFixed(2) : 0}%`}
             icon={
               <SentimentNeutralOutlinedIcon
                 sx={{ color: '#ffa927', fontSize: "26px" }}
@@ -332,8 +348,8 @@ const Dashboard = () => {
           <StatBox
             title={feelingData.negative.toFixed()}
             subtitle="Negatives"
-            progress="0.30"
-            increase="+5%"
+            progress={feelingData.total !== 0 ? feelingData.negative / feelingData.total : 0}
+            increase={`${feelingData.total !== 0 ? ((feelingData.negative * 100) / feelingData.total).toFixed(2) : 0}%`}
             icon={
               <SentimentDissatisfiedOutlinedIcon
                 sx={{ color: '#E0115F', fontSize: "26px" }}
