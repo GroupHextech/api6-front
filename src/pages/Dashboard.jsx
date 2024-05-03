@@ -43,8 +43,8 @@ const Dashboard = () => {
   const [feeling, setFeeling] = useState("");
   const [feelingData, setFeelingData] = useState({ 'total': 0, 'positive': 0, 'neutral': 0, 'negative': 0 });
   const [chartType, setChartType] = useState("pie"); // Default chart type
-  const [selectedRegions, setSelectedRegions] = useState([]);
-  const [selectedStates, setSelectedStates] = useState([]);
+  const [selectedRegions, setSelectedRegions] = useState(["Todas"]);
+  const [selectedStates, setSelectedStates] = useState(["São Paulo"]);
 
   const handleClearFilters = () => {
     setSelectedRegions(["Todas"]);
@@ -53,9 +53,9 @@ const Dashboard = () => {
   };
 
   const regioesDoBrasil = {
-    "Todas": [
-      "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS",
-      "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO"
+    Todas: [
+      "Acre", "Alagoas", "Amapá", "Amazonas", "Bahia", "Ceará", "Distrito Federal", "Espírito Santo", "Goiás", "Maranhão", "Mato Grosso", "Mato Grosso do Sul",
+      "Minas Gerais", "Pará", "Paraíba", "Paraná", "Pernambuco", "Piauí", "Rio de Janeiro", "Rio Grande do Norte", "Rio Grande do Sul", "Rondônia", "Roraima", "Santa Catarina", "São Paulo", "Sergipe", "Tocantins"
     ],
     Norte: ["Acre", "Amapá", "Amazonas", "Pará", "Rondônia", "Roraima", "Tocantins"],
     Nordeste: ["Alagoas", "Bahia", "Ceará", "Maranhão", "Paraíba", "Pernambuco", "Piauí", "Rio Grande do Norte", "Sergipe"],
@@ -131,20 +131,19 @@ const Dashboard = () => {
       setAllRegionsSelected(!allRegionsSelected);
       return;
     }
-  
-    // Obter a lista de estados correspondentes a todas as regiões selecionadas
-    selectedRegions.forEach(region => {
-      selectedStates = selectedStates.concat(regioesDoBrasil[region]);
-    });
-  
-    // Atualizar os estados selecionados e enviar apenas os estados para o backend
-    setSelectedRegions(selectedRegions);
-    setSelectedStates(selectedStates);
+
+    selectedOptions = selectedOptions.filter(item => item !== 'Todas')
+
+    setSelectedRegions(
+      typeof selectedOptions === 'string' ? selectedOptions.split(',') : selectedOptions,
+    );
   };
 
   const handleChangeEstado = (event) => {
     const selectedOptions = event.target.value;
-    setSelectedStates(selectedOptions);
+    setSelectedStates(
+      typeof selectedOptions === 'string' ? selectedOptions.split(',') : selectedOptions,
+    );
   };
 
   const handleFeelingClick = (value) => {
@@ -157,7 +156,7 @@ const Dashboard = () => {
   return (
     <Box m="20px">
       {/* HEADER */}
-      <Box display="flex" justifyContent="space-between" alignItems="center">
+      <Box display="flex" justifyContent="space-evenly" alignItems="center" flexWrap="wrap">
         <Header title="DASHBOARD" subtitle="Welcome to your dashboard" />
 
         <Stack direction="row" spacing={2}>
@@ -424,7 +423,7 @@ const Dashboard = () => {
             </Box>
           </Box>
           <Box height="250px" m="0 0 0 0">
-            <CategoriesPieAndBarChart chartType={chartType} selectedStates={selectedStates} />
+            <CategoriesPieAndBarChart chartType={chartType} />
           </Box>
         </Box>
         {/* MONTHLY PERIOD CHART */}
