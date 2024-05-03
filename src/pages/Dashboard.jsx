@@ -47,8 +47,8 @@ const Dashboard = () => {
   const [selectedStates, setSelectedStates] = useState(["São Paulo"]);
 
   const handleClearFilters = () => {
-    setSelectedRegions(["Todas"]);
-    setSelectedStates(["São Paulo"]);
+    setSelectedRegions([]);
+    setSelectedStates([]);
     setFeeling("");
   };
 
@@ -200,7 +200,7 @@ const Dashboard = () => {
 
         <div>
           <FormControl sx={{ m: 1, width: 300 }} size="small">
-            <InputLabel id="regiao-multiple-checkbox-label">Região</InputLabel>
+            <InputLabel id="regiao-multiple-checkbox-label">Region</InputLabel>
             <Select
               labelId="regiao-multiple-checkbox-label"
               id="regiao-multiple-checkbox"
@@ -208,7 +208,7 @@ const Dashboard = () => {
               value={allRegionsSelected ? ['Todas'] : selectedRegions}
               onChange={handleChangeRegion}
               input={<OutlinedInput label="Tag" />}
-              renderValue={(selected) => selected.includes('Todas') ? 'Todas as regiões' : selected.join(', ')}
+              renderValue={(selected) => selected.includes('Todas') ? 'Todas' : selected.join(', ')}
               MenuProps={MenuProps}
             >
 
@@ -224,7 +224,7 @@ const Dashboard = () => {
 
         <div>
           <FormControl sx={{ m: 1, width: 300 }} size="small">
-            <InputLabel id="estado-multiple-checkbox-label">Estado</InputLabel>
+            <InputLabel id="estado-multiple-checkbox-label">State</InputLabel>
             <Select
               labelId="estado-multiple-checkbox-label"
               id="estado-multiple-checkbox"
@@ -423,7 +423,7 @@ const Dashboard = () => {
             </Box>
           </Box>
           <Box height="250px" m="0 0 0 0">
-            <CategoriesPieAndBarChart chartType={chartType} />
+            <CategoriesPieAndBarChart chartType={chartType} filter={filter} />
           </Box>
         </Box>
         {/* MONTHLY PERIOD CHART */}

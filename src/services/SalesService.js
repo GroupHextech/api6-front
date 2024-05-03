@@ -28,9 +28,10 @@ export async function getSales() {
   }
 }
 
-export async function getCategories() {
+export async function getCategories(states, regions) {
   try {
-    const response = await fetch(`${API_URL}/review/categories`);
+    let params = getStateRegionParams(states, regions);
+    const response = await fetch(`${API_URL}/review/categories` + params);
     if (!response.ok) {
       throw new Error('Failed to fetch categories');
     }
