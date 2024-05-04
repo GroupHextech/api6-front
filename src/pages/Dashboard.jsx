@@ -100,7 +100,7 @@ const Dashboard = () => {
 
       try {
         if (states.length || regions.length) {
-          feelingData = await getFeeling(states, regions);
+          feelingData = await getFeeling(states, regions, feeling);
         } else {
           feelingData = await getFeeling();
         }
