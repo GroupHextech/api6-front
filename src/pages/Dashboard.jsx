@@ -40,7 +40,7 @@ const Dashboard = () => {
   const colors = tokens(theme.palette.mode);
 
   const [filter, setFilter] = useState({});
-  const [feeling, setFeeling] = useState("");
+  const [selectedFeeling, setSelectedFeeling] = useState("");
   const [feelingData, setFeelingData] = useState({ 'total': 0, 'positive': 0, 'neutral': 0, 'negative': 0 });
   const [chartType, setChartType] = useState("pie"); // Default chart type
   const [selectedRegions, setSelectedRegions] = useState(["Todas"]);
@@ -49,7 +49,7 @@ const Dashboard = () => {
   const handleClearFilters = () => {
     setSelectedRegions([]);
     setSelectedStates([]);
-    setFeeling("");
+    setSelectedFeeling("");
   };
 
   const regioesDoBrasil = {
@@ -84,6 +84,7 @@ const Dashboard = () => {
 
       let regions = [];
       let states = [];
+      let feeling = "";
 
       if (selectedRegions.includes('Todas')) {
         regions = [];
@@ -94,6 +95,8 @@ const Dashboard = () => {
       if (!regions.length) {
         states = selectedStates.map(state => getAbbreviation(state));
       }
+
+      feeling = selectedFeeling;
 
       try {
         if (states.length || regions.length) {
@@ -110,14 +113,14 @@ const Dashboard = () => {
         })
 
         setFeelingData(finalFeelingData);
-        setFilter({ states, regions });
+        setFilter({ states, regions, feeling });
       } catch (error) {
         console.error("Error fetching feeling data:", error.message);
       }
     }
 
     handleFeelingData();
-  }, [selectedRegions, selectedStates])
+  }, [selectedRegions, selectedStates, selectedFeeling]);
 
   const handleChangeRegion = (event, child) => {
     let selectedOptions = event.target.value;
@@ -147,7 +150,8 @@ const Dashboard = () => {
   };
 
   const handleFeelingClick = (event) => {
-    setFeeling(event.target.value);
+    setSelectedFeeling(event.target.value);
+    console.log('Feeling clicked:', event.target.value);
   };
 
   const [allRegionsSelected, setAllRegionsSelected] = useState(true);
@@ -173,9 +177,9 @@ const Dashboard = () => {
       <Stack direction="row" spacing={2}>
           <Button
             variant="contained"
-            value="positivo"
+            value="Positive"
             onClick={handleFeelingClick}
-            color={`${feeling === 'positivo' ? 'info' : 'primary'}`}
+            color={`${selectedFeeling === 'Positive' ? 'info' : 'primary'}`}
             endIcon={<EmojiEmotionsOutlinedIcon style={{ color: colors.greenAccent[600] }} />}
             sx={{
               padding: "10px 20px",
@@ -185,9 +189,9 @@ const Dashboard = () => {
           </Button>
           <Button
             variant="contained"
-            value="neutro"
+            value="Neutral"
             onClick={handleFeelingClick}
-            color={`${feeling === 'neutro' ? 'info' : 'primary'}`}
+            color={`${selectedFeeling === 'Neutral' ? 'info' : 'primary'}`}
             endIcon={<SentimentNeutralOutlinedIcon style={{ color: '#ffa927' }} />}
             sx={{
               padding: "10px 20px",
@@ -197,9 +201,9 @@ const Dashboard = () => {
           </Button>
           <Button
             variant="contained"
-            value="negativo"
+            value="Negative"
             onClick={handleFeelingClick}
-            color={`${feeling === 'negativo' ? 'info' : 'primary'}`}
+            color={`${selectedFeeling === 'Negative' ? 'info' : 'primary'}`}
             endIcon={<SentimentDissatisfiedOutlinedIcon style={{ color: '#E0115F' }} />}
             sx={{
               padding: "10px 20px",

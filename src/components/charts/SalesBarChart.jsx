@@ -56,7 +56,7 @@ export default function Chart({filter}) {
   useEffect(() => {
     async function handleSalesData() {
       try {
-        const data = await getSales(filter.states, filter.regions);
+        const data = await getSales(filter.states, filter.regions, filter.feeling);
         setSalesData(agruparVendasPorPeriodo(data));
       } catch (error) {
         console.error("Error fetching sales:", error.message);

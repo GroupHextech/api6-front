@@ -55,7 +55,7 @@ const CategoriesPieAndBarChart = ({ chartType, filter }) => {
   useEffect(() => {
     async function handleCategoriesData() {
       try {
-        const data = await getCategories(filter.states, filter.regions);
+        const data = await getCategories(filter.states, filter.regions, filter.feeling);
 
         const dadosProcessados = processarDados(data);
         const formattedData = dadosProcessados.map((categoria) => ({
@@ -67,7 +67,6 @@ const CategoriesPieAndBarChart = ({ chartType, filter }) => {
 
         setCategoriesData1(formattedData);
 
-        setCategoriesData2(mapearDadosCategoriasLv2(dadosProcessados));
       } catch (error) {
         console.error("Error fetching genders:", error.message);
       }

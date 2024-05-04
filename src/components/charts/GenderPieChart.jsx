@@ -12,7 +12,7 @@ const GenderPieChart = ({filter}) => {
   useEffect(() => {
     async function handleGenderData() {
       try {
-        const data = await getGender(filter.states, filter.regions);
+        const data = await getGender(filter.states, filter.regions, filter.feeling);
         setGenderData(data);
       } catch (error) {
         console.error("Error fetching genders:", error.message);
