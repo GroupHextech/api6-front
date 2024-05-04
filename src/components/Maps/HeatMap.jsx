@@ -8,12 +8,13 @@ import { getStates } from "../../services/SalesService.js";
 
 am4core.useTheme(am4themes_animated);
 
-const HeatMapChart = ({selectedStates}) => {
+const HeatMapChart = ({filter}) => {
   const [stateData, setStateData] = useState([]);
 
   useEffect(() => {
 
     async function handleStatesData() {
+      console.log('atualização de filtros do heatmap', filter);
       try {
         // Obtendo os dados calculados
         const data = await getStates();
@@ -23,18 +24,15 @@ const HeatMapChart = ({selectedStates}) => {
         for (let i = 0; i < data.length; i++) {
           const state = data[i];
 
-          if (selectedStates.includes(state._id)) {
+          if (filter.activeStates.includes(state._id)) {
             formattedStateData.push({
               id: `BR-${state._id}`, // Formato necessário para os identificadores dos estados
               name: state._id,
               value: state.count
             });
-          } else {
-            console.log('pais nao incluido na lista de selecionados', state)
           }
         }
         
-        console.log('nova versao dos dados selecioandos', formattedStateData)
         setStateData(formattedStateData);
       } catch (error) {
         console.error('Error fetching states:', error.message);
@@ -42,7 +40,7 @@ const HeatMapChart = ({selectedStates}) => {
     }
 
     handleStatesData();
-  }, [selectedStates]);
+  }, [filter]);
 
   useEffect(() => {
     let chart = am4core.create('heatmap-chart', am4maps.MapChart);

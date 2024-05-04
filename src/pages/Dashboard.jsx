@@ -146,9 +146,8 @@ const Dashboard = () => {
     );
   };
 
-  const handleFeelingClick = (value) => {
-    console.log(value)
-    setFeeling(value);
+  const handleFeelingClick = (event) => {
+    setFeeling(event.target.value);
   };
 
   const [allRegionsSelected, setAllRegionsSelected] = useState(true);
@@ -156,15 +155,27 @@ const Dashboard = () => {
   return (
     <Box m="20px">
       {/* HEADER */}
-      <Box display="flex" justifyContent="space-evenly" alignItems="center" flexWrap="wrap">
+      <Box display="flex" justifyContent="space-between" alignItems="center">
         <Header title="DASHBOARD" subtitle="Welcome to your dashboard" />
-
-        <Stack direction="row" spacing={2}>
+        <Box>
+          <Button
+            sx={{
+              backgroundColor: colors.blueAccent[700],
+              color: colors.grey[100],
+              fontSize: "14px",
+              fontWeight: "bold",
+              padding: "10px 20px",
+            }}
+          ><DownloadOutlinedIcon /></Button>
+        </Box>
+      </Box>
+      <Box  display="flex" justifyContent="space-between" alignItems="center">
+      <Stack direction="row" spacing={2}>
           <Button
             variant="contained"
             value="positivo"
-            onClick={(event) => handleFeelingClick(event.target.value)}
-            color="primary"
+            onClick={handleFeelingClick}
+            color={`${feeling === 'positivo' ? 'info' : 'primary'}`}
             endIcon={<EmojiEmotionsOutlinedIcon style={{ color: colors.greenAccent[600] }} />}
             sx={{
               padding: "10px 20px",
@@ -175,8 +186,8 @@ const Dashboard = () => {
           <Button
             variant="contained"
             value="neutro"
-            onClick={(event) => handleFeelingClick(event.target.value)}
-            color="primary"
+            onClick={handleFeelingClick}
+            color={`${feeling === 'neutro' ? 'info' : 'primary'}`}
             endIcon={<SentimentNeutralOutlinedIcon style={{ color: '#ffa927' }} />}
             sx={{
               padding: "10px 20px",
@@ -187,8 +198,8 @@ const Dashboard = () => {
           <Button
             variant="contained"
             value="negativo"
-            onClick={(event) => handleFeelingClick(event.target.value)}
-            color="primary"
+            onClick={handleFeelingClick}
+            color={`${feeling === 'negativo' ? 'info' : 'primary'}`}
             endIcon={<SentimentDissatisfiedOutlinedIcon style={{ color: '#E0115F' }} />}
             sx={{
               padding: "10px 20px",
@@ -255,18 +266,6 @@ const Dashboard = () => {
         >
           <CleaningServicesIcon style={{ color: '#70d8bd' }} />
         </Button>
-
-        <Box>
-          <Button
-            sx={{
-              backgroundColor: colors.blueAccent[700],
-              color: colors.grey[100],
-              fontSize: "14px",
-              fontWeight: "bold",
-              padding: "10px 20px",
-            }}
-          ><DownloadOutlinedIcon /></Button>
-        </Box>
       </Box>
 
       {/* GRID & CHARTS */}
@@ -388,7 +387,7 @@ const Dashboard = () => {
           <Typography variant="h5" fontWeight="600">
             Sales by period
           </Typography>
-          <SalesBarChart />
+          <SalesBarChart filter={filter} />
         </Box>
         {/*   REVIEWS BY CATEGORY  */}
         <Box
@@ -440,7 +439,7 @@ const Dashboard = () => {
             Number of sales per month
           </Typography>
           <Box height="250px" m="0 0 0 0">
-            <MonthlyPeriodChart />
+            <MonthlyPeriodChart filter={filter} />
           </Box>
         </Box>
       </Box>

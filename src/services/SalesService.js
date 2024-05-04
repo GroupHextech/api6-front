@@ -1,9 +1,9 @@
-const API_URL = "http://3.140.192.18:8000"
-// const API_URL = "http://127.0.0.1:5000"
+// const API_URL = "http://3.140.192.18:8000"
+const API_URL = "http://127.0.0.1:5000"
 
-export async function getGender(states, regions) {
+export async function getGender(states, regions, feeling) {
   try {
-    let params = getStateRegionParams(states, regions);
+    let params = getStateRegionParams(states, regions, feeling);
     const response = await fetch(`${API_URL}/review/gender` + params);
     if (!response.ok) {
       throw new Error('Failed to fetch gender');
@@ -15,9 +15,10 @@ export async function getGender(states, regions) {
   }
 }
 
-export async function getSales() {
+export async function getSales(states, regions, feeling) {
   try {
-    const response = await fetch(`${API_URL}/review/date`);
+    let params = getStateRegionParams(states, regions, feeling);
+    const response = await fetch(`${API_URL}/review/date` + params);
     if (!response.ok) {
       throw new Error('Failed to fetch date');
     }
@@ -28,9 +29,9 @@ export async function getSales() {
   }
 }
 
-export async function getCategories(states, regions) {
+export async function getCategories(states, regions, feeling) {
   try {
-    let params = getStateRegionParams(states, regions);
+    let params = getStateRegionParams(states, regions, feeling);
     const response = await fetch(`${API_URL}/review/categories` + params);
     if (!response.ok) {
       throw new Error('Failed to fetch categories');
@@ -55,9 +56,9 @@ export async function getStates() {
   }
 }
 
-export async function getFeeling(states, regions) {
+export async function getFeeling(states, regions, feeling) {
   try {
-    let params = getStateRegionParams(states, regions);
+    let params = getStateRegionParams(states, regions, feeling);
 
     const response = await fetch(`${API_URL}/review/feeling` + params);
     if (!response.ok) {
@@ -70,7 +71,7 @@ export async function getFeeling(states, regions) {
   }
 }
 
-function getStateRegionParams(states, regions) {
+function getStateRegionParams(states, regions, feeling) {
   let params = '';
   
   if (regions?.length) {

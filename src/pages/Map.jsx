@@ -18,12 +18,16 @@ import { tokens } from "../theme";
 export default function Map() {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
+  
+  const [feeling, setFeeling] = React.useState("todos");
   const [activeMap, setActiveMap] = React.useState("Vendas (Geral)");
   const [selectedRegion, setSelectedRegion] = React.useState("Todas");
   const [activeStates, setActiveStates] = React.useState([
     "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS",
     "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO"
   ]);
+  const [filter, setFilter] = useState({activeStates, feeling});
+
 
   const regioesDoBrasil = {
     Todas: [
@@ -42,13 +46,35 @@ export default function Map() {
 
   const handleSelectRegionChange = (element) => {
     console.log('estados a serem exibidos', regioesDoBrasil[element.target.value])
+    const newActiveStates = regioesDoBrasil[element.target.value];
+
     setSelectedRegion(element.target.value);
-    setActiveStates(regioesDoBrasil[element.target.value]);
+    setActiveStates(newActiveStates);
+    setFilter({...filter, activeStates});
   }
 
   const handleStateRemove = (itemToRemove) => {
-    setActiveStates((states) => states.filter((state) => state !== itemToRemove));
+    const newActiveStates = (states) => states.filter((state) => state !== itemToRemove);
+    setActiveStates(newActiveStates);
+    setFilter({...filter, activeStates});
   }
+
+  const handleFeelingChange = (event) => {
+    setFeeling(event.target.value);
+    setFilter({activeStates, feeling})
+  }
+
+  const handleClearFilters = () => {
+    // Limpa os filtros selecionados
+    setSelectedRegion("Todas"); // Define a região como "Todas"
+    
+    const newActiveStates = regioesDoBrasil["Todas"];
+    setActiveStates(newActiveStates);
+    setFeeling('todos')
+
+    setFilter({activeStates, feeling});
+  };
+  
 
   return (
     <Box style={{}}>
@@ -117,6 +143,8 @@ export default function Map() {
                       row
                       aria-labelledby="demo-row-radio-buttons-group-label"
                       name="row-radio-buttons-group"
+                      value={feeling}
+                      onChange={handleFeelingChange}
                     >
                       <FormControlLabel value="todos" control={<Radio />} label="Todos" />
                       <FormControlLabel value="positivo" control={<Radio />} label="Positivo" />
@@ -163,7 +191,7 @@ export default function Map() {
                 <div>
                   <Button
                     variant="contained" size="medium" style={{ marginTop: '20px', marginRight: '20px' }}
-                    endIcon={<CleaningServicesIcon style={{ color: '#70d8bd' }} />}
+                    endIcon={<CleaningServicesIcon style={{ color: '#70d8bd' }} onClick={handleClearFilters}/>}
                   >
                     Clear
                   </Button>
@@ -190,7 +218,7 @@ export default function Map() {
               marginLeft: 3,
             }}
           >
-            <HeatMapChart selectedStates={activeStates} />
+            <HeatMapChart filter={filter} />
           </Box>
         </div>
       </Box>
