@@ -1,7 +1,7 @@
-import { useState } from "react";
-import { Grid } from "@mui/material";
+import { useEffect, useState } from "react";
+import { Checkbox, FormControl, Grid, InputLabel, ListItemText, MenuItem, OutlinedInput, Select } from "@mui/material";
 
-import { Box, Button, Typography, useTheme } from "@mui/material";
+import { Box, Button, Typography, useTheme, Stack } from "@mui/material";
 import { tokens } from "../theme";
 
 // COMPONENTS:
@@ -20,19 +20,147 @@ import EmojiEmotionsOutlinedIcon from "@mui/icons-material/EmojiEmotionsOutlined
 import SentimentNeutralOutlinedIcon from "@mui/icons-material/SentimentNeutralOutlined";
 import SentimentDissatisfiedOutlinedIcon from "@mui/icons-material/SentimentDissatisfiedOutlined";
 import CategoriesPieAndBarChart from "../components/charts/CategoriesPieAndBarChart";
+import CleaningServicesIcon from '@mui/icons-material/CleaningServices';
+import { SystemUpdateRounded } from "@mui/icons-material";
+import { getFeeling } from "../services/SalesService";
+
+const ITEM_HEIGHT = 48;
+const ITEM_PADDING_TOP = 8;
+const MenuProps = {
+  PaperProps: {
+    style: {
+      maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
+      width: 250,
+    },
+  },
+};
 
 const Dashboard = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
 
+  const [filter, setFilter] = useState({});
+  const [selectedFeeling, setSelectedFeeling] = useState("");
+  const [feelingData, setFeelingData] = useState({ 'total': 0, 'positive': 0, 'neutral': 0, 'negative': 0 });
   const [chartType, setChartType] = useState("pie"); // Default chart type
+  const [selectedRegions, setSelectedRegions] = useState(["Todas"]);
+  const [selectedStates, setSelectedStates] = useState(["São Paulo"]);
+
+  const handleClearFilters = () => {
+    setSelectedRegions([]);
+    setSelectedStates([]);
+    setSelectedFeeling("");
+  };
+
+  const regioesDoBrasil = {
+    Todas: [
+      "Acre", "Alagoas", "Amapá", "Amazonas", "Bahia", "Ceará", "Distrito Federal", "Espírito Santo", "Goiás", "Maranhão", "Mato Grosso", "Mato Grosso do Sul",
+      "Minas Gerais", "Pará", "Paraíba", "Paraná", "Pernambuco", "Piauí", "Rio de Janeiro", "Rio Grande do Norte", "Rio Grande do Sul", "Rondônia", "Roraima", "Santa Catarina", "São Paulo", "Sergipe", "Tocantins"
+    ],
+    Norte: ["Acre", "Amapá", "Amazonas", "Pará", "Rondônia", "Roraima", "Tocantins"],
+    Nordeste: ["Alagoas", "Bahia", "Ceará", "Maranhão", "Paraíba", "Pernambuco", "Piauí", "Rio Grande do Norte", "Sergipe"],
+    "Centro-oeste": ["Distrito Federal", "Goiás", "Mato Grosso", "Mato Grosso do Sul"],
+    Sudeste: ["Espírito Santo", "Minas Gerais", "Rio de Janeiro", "São Paulo"],
+    Sul: ["Paraná", "Rio Grande do Sul", "Santa Catarina"]
+  };
+
+  const stateAbbreviations = [
+    "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS",
+    "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO"
+  ];
+
+  function getAbbreviation(fullStateName) {
+    const index = regioesDoBrasil.Todas.indexOf(fullStateName);
+    if (index !== -1) {
+      return stateAbbreviations[index];
+    } else {
+      return null;
+    }
+  }
+
+  useEffect(() => {
+    async function handleFeelingData() {
+      let feelingData;
+
+      let regions = [];
+      let states = [];
+      let feeling = "";
+
+      if (selectedRegions.includes('Todas')) {
+        regions = [];
+      } else if (selectedRegions.length) {
+        regions = selectedRegions;
+      }
+
+      if (!regions.length) {
+        states = selectedStates.map(state => getAbbreviation(state));
+      }
+
+      feeling = selectedFeeling;
+
+      try {
+        if (states.length || regions.length) {
+          feelingData = await getFeeling(states, regions, feeling);
+        } else {
+          feelingData = await getFeeling();
+        }
+
+        let finalFeelingData = { 'total': 0, 'positive': 0, 'neutral': 0, 'negative': 0 };
+
+        feelingData.forEach(row => {
+          finalFeelingData[row._id.toLowerCase()] = row.count;
+          finalFeelingData['total'] += row.count;
+        })
+
+        setFeelingData(finalFeelingData);
+        setFilter({ states, regions, feeling });
+      } catch (error) {
+        console.error("Error fetching feeling data:", error.message);
+      }
+    }
+
+    handleFeelingData();
+  }, [selectedRegions, selectedStates, selectedFeeling]);
+
+  const handleChangeRegion = (event, child) => {
+    let selectedOptions = event.target.value;
+
+    if (child.props.value === 'Todas') {
+      if (allRegionsSelected) {
+        setSelectedRegions([]);
+      } else {
+        setSelectedRegions(Object.keys(regioesDoBrasil));
+      }
+      setAllRegionsSelected(!allRegionsSelected);
+      return;
+    }
+
+    selectedOptions = selectedOptions.filter(item => item !== 'Todas')
+
+    setSelectedRegions(
+      typeof selectedOptions === 'string' ? selectedOptions.split(',') : selectedOptions,
+    );
+  };
+
+  const handleChangeEstado = (event) => {
+    const selectedOptions = event.target.value;
+    setSelectedStates(
+      typeof selectedOptions === 'string' ? selectedOptions.split(',') : selectedOptions,
+    );
+  };
+
+  const handleFeelingClick = (event) => {
+    setSelectedFeeling(event.target.value);
+    console.log('Feeling clicked:', event.target.value);
+  };
+
+  const [allRegionsSelected, setAllRegionsSelected] = useState(true);
 
   return (
     <Box m="20px">
       {/* HEADER */}
       <Box display="flex" justifyContent="space-between" alignItems="center">
         <Header title="DASHBOARD" subtitle="Welcome to your dashboard" />
-
         <Box>
           <Button
             sx={{
@@ -42,11 +170,106 @@ const Dashboard = () => {
               fontWeight: "bold",
               padding: "10px 20px",
             }}
-          >
-            <DownloadOutlinedIcon sx={{ mr: "10px" }} />
-            Download Reports
-          </Button>
+          ><DownloadOutlinedIcon /></Button>
         </Box>
+      </Box>
+      <Box  display="flex" justifyContent="space-between" alignItems="center">
+      <Stack direction="row" spacing={2}>
+          <Button
+            variant="contained"
+            value="Positive"
+            onClick={handleFeelingClick}
+            color={`${selectedFeeling === 'Positive' ? 'info' : 'primary'}`}
+            endIcon={<EmojiEmotionsOutlinedIcon style={{ color: colors.greenAccent[600] }} />}
+            sx={{
+              padding: "10px 20px",
+            }}
+          >
+            POSITIVE
+          </Button>
+          <Button
+            variant="contained"
+            value="Neutral"
+            onClick={handleFeelingClick}
+            color={`${selectedFeeling === 'Neutral' ? 'info' : 'primary'}`}
+            endIcon={<SentimentNeutralOutlinedIcon style={{ color: '#ffa927' }} />}
+            sx={{
+              padding: "10px 20px",
+            }}
+          >
+            NEUTRAL
+          </Button>
+          <Button
+            variant="contained"
+            value="Negative"
+            onClick={handleFeelingClick}
+            color={`${selectedFeeling === 'Negative' ? 'info' : 'primary'}`}
+            endIcon={<SentimentDissatisfiedOutlinedIcon style={{ color: '#E0115F' }} />}
+            sx={{
+              padding: "10px 20px",
+            }}
+          >
+            NEGATIVE
+          </Button>
+        </Stack>
+
+        <div>
+          <FormControl sx={{ m: 1, width: 300 }} size="small">
+            <InputLabel id="regiao-multiple-checkbox-label">Region</InputLabel>
+            <Select
+              labelId="regiao-multiple-checkbox-label"
+              id="regiao-multiple-checkbox"
+              multiple
+              value={allRegionsSelected ? ['Todas'] : selectedRegions}
+              onChange={handleChangeRegion}
+              input={<OutlinedInput label="Tag" />}
+              renderValue={(selected) => selected.includes('Todas') ? 'Todas' : selected.join(', ')}
+              MenuProps={MenuProps}
+            >
+
+              {Object.keys(regioesDoBrasil).map((region) => (
+                <MenuItem key={region} value={region}>
+                  <Checkbox checked={selectedRegions.indexOf(region) > -1} />
+                  <ListItemText primary={region} />
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </div>
+
+        <div>
+          <FormControl sx={{ m: 1, width: 300 }} size="small">
+            <InputLabel id="estado-multiple-checkbox-label">State</InputLabel>
+            <Select
+              labelId="estado-multiple-checkbox-label"
+              id="estado-multiple-checkbox"
+              multiple
+              value={selectedStates}
+              onChange={handleChangeEstado}
+              input={<OutlinedInput label="Tag" />}
+              renderValue={(selected) => selected.join(', ')}
+              MenuProps={MenuProps}
+            >
+              {regioesDoBrasil.Todas.map((state) => (
+                <MenuItem key={state} value={state}>
+                  <Checkbox checked={selectedStates.indexOf(state) > -1} />
+                  <ListItemText primary={state} />
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </div>
+
+        <Button
+          variant="contained"
+          color="primary"
+          sx={{
+            padding: "10px 20px",
+          }}
+          onClick={handleClearFilters}
+        >
+          <CleaningServicesIcon style={{ color: '#70d8bd' }} />
+        </Button>
       </Box>
 
       {/* GRID & CHARTS */}
@@ -66,10 +289,10 @@ const Dashboard = () => {
           justifyContent="center"
         >
           <StatBox
-            title="1,325,134"
-            subtitle="Reviews"
-            progress="0.80"
-            increase="+43%"
+            title={feelingData.total.toFixed()}
+            subtitle="Total Reviews"
+            progress="1"
+            increase="100%"
             icon={
               <ReviewsOutlinedIcon
                 sx={{ color: colors.greenAccent[600], fontSize: "26px" }}
@@ -86,10 +309,10 @@ const Dashboard = () => {
           justifyContent="center"
         >
           <StatBox
-            title="12,361"
+            title={feelingData.positive.toFixed()}
             subtitle="Positives"
-            progress="0.75"
-            increase="+14%"
+            progress={feelingData.total !== 0 ? feelingData.positive / feelingData.total : 0}
+            increase={`${feelingData.total !== 0 ? ((feelingData.positive * 100) / feelingData.total).toFixed(2) : 0}%`}
             icon={
               <EmojiEmotionsOutlinedIcon
                 sx={{ color: colors.greenAccent[600], fontSize: "26px" }}
@@ -106,13 +329,13 @@ const Dashboard = () => {
           justifyContent="center"
         >
           <StatBox
-            title="431,225"
-            subtitle="Neltrals"
-            progress="0.50"
-            increase="+21%"
+            title={feelingData.neutral.toFixed()}
+            subtitle="Neutrals"
+            progress={feelingData.total !== 0 ? feelingData.neutral / feelingData.total : 0}
+            increase={`${feelingData.total !== 0 ? ((feelingData.neutral * 100) / feelingData.total).toFixed(2) : 0}%`}
             icon={
               <SentimentNeutralOutlinedIcon
-                sx={{ color: colors.greenAccent[600], fontSize: "26px" }}
+                sx={{ color: '#ffa927', fontSize: "26px" }}
               />
             }
           />
@@ -126,13 +349,13 @@ const Dashboard = () => {
           justifyContent="center"
         >
           <StatBox
-            title="32,441"
+            title={feelingData.negative.toFixed()}
             subtitle="Negatives"
-            progress="0.30"
-            increase="+5%"
+            progress={feelingData.total !== 0 ? feelingData.negative / feelingData.total : 0}
+            increase={`${feelingData.total !== 0 ? ((feelingData.negative * 100) / feelingData.total).toFixed(2) : 0}%`}
             icon={
               <SentimentDissatisfiedOutlinedIcon
-                sx={{ color: colors.greenAccent[600], fontSize: "26px" }}
+                sx={{ color: '#E0115F', fontSize: "26px" }}
               />
             }
           />
@@ -153,7 +376,7 @@ const Dashboard = () => {
           <Typography variant="h5" fontWeight="600">
             Gender
           </Typography>
-          <GenderPieChart />
+          <GenderPieChart filter={filter} />
         </Box>
         {/* SALES BY PERIOD */}
         <Box
@@ -168,7 +391,7 @@ const Dashboard = () => {
           <Typography variant="h5" fontWeight="600">
             Sales by period
           </Typography>
-          <SalesBarChart />
+          <SalesBarChart filter={filter} />
         </Box>
         {/*   REVIEWS BY CATEGORY  */}
         <Box
@@ -203,7 +426,7 @@ const Dashboard = () => {
             </Box>
           </Box>
           <Box height="250px" m="0 0 0 0">
-            <CategoriesPieAndBarChart chartType={chartType} />
+            <CategoriesPieAndBarChart chartType={chartType} filter={filter} />
           </Box>
         </Box>
         {/* MONTHLY PERIOD CHART */}
@@ -217,10 +440,10 @@ const Dashboard = () => {
         // mt="25px"
         >
           <Typography variant="h5" fontWeight="600">
-          Number of sales per month
+            Number of sales per month
           </Typography>
           <Box height="250px" m="0 0 0 0">
-            <MonthlyPeriodChart />
+            <MonthlyPeriodChart filter={filter} />
           </Box>
         </Box>
       </Box>

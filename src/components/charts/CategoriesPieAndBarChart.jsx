@@ -45,7 +45,7 @@ function mapearDadosCategoriasLv2(categorias) {
   }, []);
 }
 
-const CategoriesPieAndBarChart = ({ chartType }) => {
+const CategoriesPieAndBarChart = ({ chartType, filter }) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
 
@@ -55,7 +55,7 @@ const CategoriesPieAndBarChart = ({ chartType }) => {
   useEffect(() => {
     async function handleCategoriesData() {
       try {
-        const data = await getCategories();
+        const data = await getCategories(filter.states, filter.regions, filter.feeling);
 
         const dadosProcessados = processarDados(data);
         const formattedData = dadosProcessados.map((categoria) => ({
@@ -67,14 +67,13 @@ const CategoriesPieAndBarChart = ({ chartType }) => {
 
         setCategoriesData1(formattedData);
 
-        setCategoriesData2(mapearDadosCategoriasLv2(dadosProcessados));
       } catch (error) {
         console.error("Error fetching genders:", error.message);
       }
     }
 
     handleCategoriesData();
-  }, []);
+  }, [filter]);
 
   return (
     <>

@@ -4,7 +4,7 @@ import { useTheme } from "@mui/material";
 import { useState, useEffect } from "react";
 import { getGender } from "../../services/SalesService";
 
-const GenderPieChart = () => {
+const GenderPieChart = ({filter}) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const [genderData, setGenderData] = useState([]);
@@ -12,7 +12,7 @@ const GenderPieChart = () => {
   useEffect(() => {
     async function handleGenderData() {
       try {
-        const data = await getGender();
+        const data = await getGender(filter.states, filter.regions, filter.feeling);
         setGenderData(data);
       } catch (error) {
         console.error("Error fetching genders:", error.message);
@@ -20,7 +20,7 @@ const GenderPieChart = () => {
     }
 
     handleGenderData();
-  }, []);
+  }, [filter]);
 
   if (genderData?.length)
     return (

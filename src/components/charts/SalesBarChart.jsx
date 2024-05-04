@@ -47,7 +47,7 @@ function agruparVendasPorPeriodo(dados) {
   return vendasPorPeriodoArray;
 }
 
-export default function Chart() {
+export default function Chart({filter}) {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
 
@@ -56,7 +56,7 @@ export default function Chart() {
   useEffect(() => {
     async function handleSalesData() {
       try {
-        const data = await getSales();
+        const data = await getSales(filter.states, filter.regions, filter.feeling);
         setSalesData(agruparVendasPorPeriodo(data));
       } catch (error) {
         console.error("Error fetching sales:", error.message);
@@ -64,7 +64,7 @@ export default function Chart() {
     }
 
     handleSalesData();
-  }, []);
+  }, [filter]);
 
   if (salesData?.length) {
     return (
