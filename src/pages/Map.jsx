@@ -50,18 +50,21 @@ export default function Map() {
 
     setSelectedRegion(element.target.value);
     setActiveStates(newActiveStates);
-    setFilter({...filter, activeStates});
+    const newFilter = {...filter, activeStates: newActiveStates};
+    setFilter(newFilter);
   }
 
   const handleStateRemove = (itemToRemove) => {
-    const newActiveStates = (states) => states.filter((state) => state !== itemToRemove);
+    const newActiveStates = activeStates.filter((state) => state !== itemToRemove);
     setActiveStates(newActiveStates);
-    setFilter({...filter, activeStates});
+    const newFilter = {...filter, activeStates: newActiveStates};
+    setFilter(newFilter);
   }
 
   const handleFeelingChange = (event) => {
     setFeeling(event.target.value);
-    setFilter({activeStates, feeling})
+    const newFilter = {...filter, feeling: event.target.value};
+    setFilter(newFilter)
   }
 
   const handleClearFilters = () => {
@@ -72,7 +75,8 @@ export default function Map() {
     setActiveStates(newActiveStates);
     setFeeling('todos')
 
-    setFilter({activeStates, feeling});
+    const newFilter = {activeStates, feeling};
+    setFilter(newFilter);
   };
   
 
@@ -146,10 +150,42 @@ export default function Map() {
                       value={feeling}
                       onChange={handleFeelingChange}
                     >
-                      <FormControlLabel value="todos" control={<Radio />} label="Todos" />
-                      <FormControlLabel value="positivo" control={<Radio />} label="Positivo" />
-                      <FormControlLabel value="neutro" control={<Radio />} label="Neutro" />
-                      <FormControlLabel value="negativo" control={<Radio />} label="Negativo" />
+                      <FormControlLabel value="todos" control={
+                      <Radio  
+                        sx={{
+                          color: colors.grey[300],
+                          '&.Mui-checked': {
+                            color: colors.blueAccent[500],
+                          },
+                        }}/>
+                      } label="Todos" />
+                      <FormControlLabel value="Positive" control={
+                      <Radio  
+                        sx={{
+                          color: colors.grey[300],
+                          '&.Mui-checked': {
+                            color: colors.blueAccent[500],
+                          },
+                        }}/>
+                      } label="Positivo" />
+                      <FormControlLabel value="Neutral" control={
+                      <Radio  
+                        sx={{
+                          color: colors.grey[300],
+                          '&.Mui-checked': {
+                            color: colors.blueAccent[500],
+                          },
+                        }}/>
+                      } label="Neutro" />
+                      <FormControlLabel value="Negative" control={
+                      <Radio  
+                        sx={{
+                          color: colors.grey[300],
+                          '&.Mui-checked': {
+                            color: colors.blueAccent[500],
+                          },
+                        }}/>
+                      } label="Negativo" />
                     </RadioGroup>
                   </FormControl>
                 </div>
@@ -166,12 +202,60 @@ export default function Map() {
                       onChange={handleSelectRegionChange}
                       value={selectedRegion}
                     >
-                      <FormControlLabel value="Todas" control={<Radio />} label="Todas" />
-                      <FormControlLabel value="Norte" control={<Radio />} label="Norte" />
-                      <FormControlLabel value="Sul" control={<Radio />} label="Sul" />
-                      <FormControlLabel value="Sudeste" control={<Radio />} label="Sudeste" />
-                      <FormControlLabel value="Nordeste" control={<Radio />} label="Nordeste" />
-                      <FormControlLabel value="CentroOeste" control={<Radio />} label="Centro-oeste" />
+                      <FormControlLabel value="Todas" control={
+                      <Radio  
+                        sx={{
+                          color: colors.grey[300],
+                          '&.Mui-checked': {
+                            color: colors.blueAccent[500],
+                          },
+                        }}/>
+                      } label="Todas" />
+                      <FormControlLabel value="Norte" control={
+                      <Radio  
+                        sx={{
+                          color: colors.grey[300],
+                          '&.Mui-checked': {
+                            color: colors.blueAccent[500],
+                          },
+                        }}/>
+                      } label="Norte" />
+                      <FormControlLabel value="Sul" control={
+                      <Radio  
+                        sx={{
+                          color: colors.grey[300],
+                          '&.Mui-checked': {
+                            color: colors.blueAccent[500],
+                          },
+                        }}/>
+                      } label="Sul" />
+                      <FormControlLabel value="Sudeste" control={
+                      <Radio  
+                        sx={{
+                          color: colors.grey[300],
+                          '&.Mui-checked': {
+                            color: colors.blueAccent[500],
+                          },
+                        }}/>
+                      } label="Sudeste" />
+                      <FormControlLabel value="Nordeste" control={
+                      <Radio  
+                        sx={{
+                          color: colors.grey[300],
+                          '&.Mui-checked': {
+                            color: colors.blueAccent[500],
+                          },
+                        }}/>
+                      } label="Nordeste" />
+                      <FormControlLabel value="CentroOeste" control={
+                      <Radio  
+                        sx={{
+                          color: colors.grey[300],
+                          '&.Mui-checked': {
+                            color: colors.blueAccent[500],
+                          },
+                        }}/>
+                      } label="Centro-oeste" />
                     </RadioGroup>
                   </FormControl>
                 </div>
