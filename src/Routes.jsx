@@ -24,7 +24,7 @@ export default function AppRoutes() {
 
   // Função para renderizar as rotas privadas apenas se o usuário estiver autenticado
   const renderPrivateRoute = (element) => {
-    return isAuthenticated ? element : <Navigate to="/login" />;
+    return true ? element : <Navigate to="/login" />;
   };
 
   return (
@@ -33,7 +33,7 @@ export default function AppRoutes() {
         <CssBaseline />
         <div className="app">
           {!isLoginPage && !isRegisterPage && <Sidebar isSidebar={isSidebar} />}
-          <main className="content">
+          <main className="content" style={{overflowY: 'scroll'}}>
             {!isLoginPage && !isRegisterPage && <Topbar setIsSidebar={setIsSidebar} />}
 
             <Routes>

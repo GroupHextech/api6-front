@@ -67,6 +67,7 @@ const CategoriesPieAndBarChart = ({ chartType, filter }) => {
 
         setCategoriesData1(formattedData);
 
+        // setCategoriesData2(mapearDadosCategoriasLv2(dadosProcessados));
       } catch (error) {
         console.error("Error fetching genders:", error.message);
       }
@@ -230,7 +231,7 @@ const CategoriesPieAndBarChart = ({ chartType, filter }) => {
             margin={{ top: 20, right: 30, bottom: 30, left: 150 }}
             padding={0.3}
             layout="horizontal"
-            colors={{ scheme: "dark2" }}
+            colors={{ scheme: "nivo" }}
             colorBy="indexValue"
             defs={[
               {

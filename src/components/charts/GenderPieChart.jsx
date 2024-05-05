@@ -27,13 +27,13 @@ const GenderPieChart = ({filter}) => {
       <ResponsivePie
         data={[
           {
-            id: genderData[1]._id,
-            value: genderData[1].count,
+            id: genderData[1]?._id ?? 'F',
+            value: genderData[1]?.count ?? 0,
             label: "Mulheres",
           },
           {
-            id: genderData[0]._id,
-            value: genderData[0].count,
+            id: genderData[0]?._id ?? 'M',
+            value: genderData[0]?.count ?? 0,
             label: "Homens",
           },
         ]}

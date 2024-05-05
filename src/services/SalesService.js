@@ -1,10 +1,11 @@
-const API_URL = "http://3.140.192.18:8000"
-// const API_URL = "http://127.0.0.1:5000"
+// const API_URL = "http://3.140.192.18:8000"
+const API_URL = "http://127.0.0.1:5000"
+const API_URL_PREFIX = "api"
 
 export async function getGender(states, regions, feeling) {
   try {
     let params = getFilterParams(states, regions, feeling);
-    const response = await fetch(`${API_URL}/api/gender` + params);
+    const response = await fetch(`${API_URL}/${API_URL_PREFIX}/gender` + params);
     if (!response.ok) {
       throw new Error('Failed to fetch gender');
     }
@@ -18,7 +19,7 @@ export async function getGender(states, regions, feeling) {
 export async function getSales(states, regions, feeling) {
   try {
     let params = getFilterParams(states, regions, feeling);
-    const response = await fetch(`${API_URL}/api/date` + params);
+    const response = await fetch(`${API_URL}/${API_URL_PREFIX}/date` + params);
     if (!response.ok) {
       throw new Error('Failed to fetch date');
     }
@@ -32,9 +33,7 @@ export async function getSales(states, regions, feeling) {
 export async function getCategories(states, regions, feeling) {
   try {
     let params = getFilterParams(states, regions, feeling);
-    const response = await fetch(`${API_URL}/api/categories` + params);
-    // CONSOLE LOG>>>>>>>>
-    console.log(response);
+    const response = await fetch(`${API_URL}/${API_URL_PREFIX}/categories` + params);
     if (!response.ok) {
       throw new Error('Failed to fetch categories');
     }
@@ -45,9 +44,11 @@ export async function getCategories(states, regions, feeling) {
   }
 }
 
-export async function getStates() {
+export async function getStates(states, regions, feeling) {
+  let params = getFilterParams(states, regions, feeling);
+  
   try {
-    const response = await fetch(`${API_URL}/api/state`);
+    const response = await fetch(`${API_URL}/${API_URL_PREFIX}/state` + params);
     if (!response.ok) {
       throw new Error('Failed to fetch states');
     }
@@ -62,7 +63,22 @@ export async function getFeeling(states, regions, feeling) {
   try {
     let params = getFilterParams(states, regions, feeling);
 
-    const response = await fetch(`${API_URL}/api/feeling` + params);
+    const response = await fetch(`${API_URL}/${API_URL_PREFIX}/feeling` + params);
+    if (!response.ok) {
+      throw new Error('Failed to fetch feeling data');
+    }
+    const data = await response.json();
+    return data.list;
+  } catch (error) {
+    throw new Error(error.message);
+  }
+}
+
+export async function getFeelingByMonth(states, regions, feeling) {
+  try {
+    let params = getFilterParams(states, regions, feeling);
+
+    const response = await fetch(`${API_URL}/${API_URL_PREFIX}/feeling_by_month` + params);
     if (!response.ok) {
       throw new Error('Failed to fetch feeling data');
     }
@@ -74,18 +90,17 @@ export async function getFeeling(states, regions, feeling) {
 }
 
 function getFilterParams(states, regions, feeling) {
-  let params = '';
+  let params = [];
   
   if (regions?.length) {
-    params = `?region=${regions[0].toLowerCase()}`;
+    params.push(`region=${regions[0].toLowerCase()}`);
   } else if (states?.length) {
-    params = '?' + states.map(state => `state=${state}`).join(`&`);
+    params.push('' + states.map(state => `state=${state}`).join(`&`));
+  }
+  
+  if (feeling?.length) {
+    params.push(`feeling=${feeling}`);
   }
 
-  // Add the feeling parameter if it's provided
-  if (feeling) {
-    params += (params ? '&' : '?') + `feeling=${feeling}`;
-  }
-
-  return params;
+  return '?' + params.join('&');
 }
