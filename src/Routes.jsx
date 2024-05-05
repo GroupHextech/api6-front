@@ -9,6 +9,7 @@ import Dashboard from "../src/pages/Dashboard";
 import Map from "../src/pages/Map";
 import Register from "../src/pages/auth/Register";
 import Login from "./pages/auth/Login";
+import UserData from "./pages/UserData";
 import { AuthContext } from "./services/authContext";
 
 export default function AppRoutes() {
@@ -41,6 +42,7 @@ export default function AppRoutes() {
               <Route path="/" element={renderPrivateRoute(<Home />)} />
               <Route path="/dashboard" element={renderPrivateRoute(<Dashboard />)} />
               <Route path="/map" element={renderPrivateRoute(<Map />)} />
+              <Route path="/userData" element={renderPrivateRoute(<UserData />)} />
               {/* Adicione outras rotas aqui */}
             </Routes>
           </main>
