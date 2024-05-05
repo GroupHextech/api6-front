@@ -24,7 +24,7 @@ export default function AppRoutes() {
 
   // Função para renderizar as rotas privadas apenas se o usuário estiver autenticado
   const renderPrivateRoute = (element) => {
-    return true ? element : <Navigate to="/login" />;
+    return isAuthenticated ? element : <Navigate to="/login" />;
   };
 
   return (
