@@ -15,9 +15,10 @@ const HeatMapChart = ({filter}) => {
 
     async function handleStatesData() {
       console.log('atualização de filtros do heatmap', filter);
+      const feeling = filter.feeling === 'todos' ? undefined : filter.feeling
       try {
         // Obtendo os dados calculados
-        const data = await getStates();
+        const data = await getStates(filter.activeStates, null, feeling);
 
         // Convertendo os dados calculados para o formato necessário para o mapa de calor
         const formattedStateData = [];

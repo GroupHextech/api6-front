@@ -120,7 +120,7 @@ const Dashboard = () => {
     }
 
     handleFeelingData();
-  }, [selectedRegions, selectedStates, selectedFeeling]);
+  }, [selectedRegions, selectedStates, selectedFeeling])
 
   const handleChangeRegion = (event, child) => {
     let selectedOptions = event.target.value;
@@ -179,7 +179,7 @@ const Dashboard = () => {
             variant="contained"
             value="Positive"
             onClick={handleFeelingClick}
-            color={`${selectedFeeling === 'Positive' ? 'info' : 'primary'}`}
+            style={{backgroundColor: selectedFeeling === 'Positive' ? colors.grey[550] : colors.primary[400]}}
             endIcon={<EmojiEmotionsOutlinedIcon style={{ color: colors.greenAccent[600] }} />}
             sx={{
               padding: "10px 20px",
@@ -191,7 +191,7 @@ const Dashboard = () => {
             variant="contained"
             value="Neutral"
             onClick={handleFeelingClick}
-            color={`${selectedFeeling === 'Neutral' ? 'info' : 'primary'}`}
+            style={{backgroundColor: selectedFeeling === 'Neutral' ? colors.grey[550] : colors.primary[400]}}
             endIcon={<SentimentNeutralOutlinedIcon style={{ color: '#ffa927' }} />}
             sx={{
               padding: "10px 20px",
@@ -203,7 +203,7 @@ const Dashboard = () => {
             variant="contained"
             value="Negative"
             onClick={handleFeelingClick}
-            color={`${selectedFeeling === 'Negative' ? 'info' : 'primary'}`}
+            style={{backgroundColor: selectedFeeling === 'Negative' ? colors.grey[550] : colors.primary[400]}}
             endIcon={<SentimentDissatisfiedOutlinedIcon style={{ color: '#E0115F' }} />}
             sx={{
               padding: "10px 20px",
