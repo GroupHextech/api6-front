@@ -5,26 +5,38 @@ import { useState, useEffect } from "react";
 import { dados } from "./MockSentimentos";
 import { ResponsiveBar } from '@nivo/bar';
 import { BarChart } from "@mui/x-charts";
+import { getFeelingByMonth } from "../../services/SalesService";
 
-export default function Chart() {
+export default function Chart({filter}) {
     const theme = useTheme();
     const colors = tokens(theme.palette.mode);
+    const [feelingData, setFeelingData] = useState([]);
+    
+    useEffect(() => {
+      const handleGetData = async () => {
+        const dados = await getFeelingByMonth(filter.states, filter.regions, null);
 
+        setFeelingData(dados);
+      }
+
+      handleGetData()
+    }, [filter])
 
     if (true) {
         return <>
             <ResponsiveBar
-                data={dados}
+                data={feelingData}
                 keys={[
-                    'positivo',
-                    'negativo'
+                    'Positive',
+                    'Neutral',
+                    'Negative'
                 ]}
                 indexBy="_id"
                 margin={{ top: 50, right: 130, bottom: 50, left: 60 }}
                 padding={0.3}
                 valueScale={{ type: 'linear' }}
                 indexScale={{ type: 'band', round: true }}
-                colors={{ scheme: 'dark2' }}
+                colors={{ scheme: 'nivo' }}
                 fill={[
                     {
                         match: {
