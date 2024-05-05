@@ -1,16 +1,26 @@
-import { useState } from "react";
+import { useState, useContext } from "react";
 import { ProSidebar, Menu, MenuItem } from "react-pro-sidebar";
 import { Box, IconButton, Typography, useTheme } from "@mui/material";
 import { Link } from "react-router-dom";
 import "react-pro-sidebar/dist/css/styles.css";
 import { tokens } from "../../theme";
+import { AuthContext } from "../../services/authContext";
+import { ref, getDownloadURL, uploadBytesResumable } from "firebase/storage"; // Importe as funções necessárias para fazer upload de arquivos
+import { storage, firestore } from "../../services/firebaseConfig"; // Importe a instância do Firebase Storage e do Firestore
+import { useEffect } from "react";
+import { doc, updateDoc } from "@firebase/firestore";
 
 // ICONS:
 import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
 import DashboardOutlinedIcon from "@mui/icons-material/DashboardOutlined";
 import MapOutlinedIcon from "@mui/icons-material/MapOutlined";
-// import FolderSharedRoundedIcon from "@mui/icons-material/FolderSharedRounded";
 import MenuOutlinedIcon from "@mui/icons-material/MenuOutlined";
+import HandymanOutlinedIcon from '@mui/icons-material/HandymanOutlined';
+
+
+
+
+
 
 const Item = ({ title, to, icon, selected, setSelected }) => {
   const theme = useTheme();
@@ -35,6 +45,54 @@ const Sidebar = () => {
   const colors = tokens(theme.palette.mode);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [selected, setSelected] = useState("Home");
+  const { userData , currentUser } = useContext(AuthContext);
+  const [userName, setUserName] = useState("");
+  const [userRole, setUserRole] = useState("");
+  const [userFoto, setUserFoto] = useState("");
+  const [progressPorcent, setProgressPorcent] = useState(0);
+
+  useEffect(() => {
+    if (userData) {
+      setUserName(userData.name);
+      setUserRole(userData.role);
+      setUserFoto(userData.foto);
+    }
+  }, [userData]);
+
+  const handleProfilePhotoUpload = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const storageRef = ref(storage, `profile_photos/${currentUser.uid}`); // Caminho onde a imagem será armazenada
+    const uploadTask = uploadBytesResumable(storageRef, file);
+
+    uploadTask.on(
+      "state_changed",
+      (snapshot) => {
+        const progress = Math.round(
+          (snapshot.bytesTransferred / snapshot.totalBytes) * 100
+        );
+        setProgressPorcent(progress);
+      },
+      (error) => {
+        console.error("Erro ao fazer upload da foto do perfil:", error);
+      },
+      () => {
+        getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+          // Atualiza a foto do perfil no Firestore
+          const userRef = doc(firestore, "users", currentUser.uid);
+          updateDoc(userRef, {
+            foto: downloadURL
+          }).then(() => {
+            // Atualiza o estado da foto do perfil no componente
+            setUserFoto(downloadURL);
+          }).catch((error) => {
+            console.error("Erro ao atualizar a foto do perfil no Firestore:", error);
+          });
+        });
+      }
+    );
+  };
 
   return (
     <Box
@@ -58,7 +116,6 @@ const Sidebar = () => {
     >
       <ProSidebar collapsed={isCollapsed}>
         <Menu iconShape="square">
-          {/* LOGO AND MENU ICON */}
           <MenuItem
             onClick={() => setIsCollapsed(!isCollapsed)}
             icon={isCollapsed ? <MenuOutlinedIcon /> : undefined}
@@ -95,12 +152,21 @@ const Sidebar = () => {
           {!isCollapsed && (
             <Box mb="25px">
               <Box display="flex" justifyContent="center" alignItems="center">
-                <img
-                  alt="profile-user"
-                  width="100px"
-                  height="100px"
-                  src={`../../assets/user.png`}
-                  style={{ cursor: "pointer", borderRadius: "50%" }}
+                <label htmlFor="profile-photo-input">
+                  <img
+                    alt="profile-user"
+                    width="100px"
+                    height="100px"
+                    src={userFoto}
+                    style={{ cursor: "pointer", borderRadius: "50%" }}
+                  />
+                </label>
+                <input
+                  type="file"
+                  id="profile-photo-input"
+                  accept="image/*"
+                  style={{ display: "none" }}
+                  onChange={handleProfilePhotoUpload}
                 />
               </Box>
               <Box textAlign="center">
@@ -110,10 +176,10 @@ const Sidebar = () => {
                   fontWeight="bold"
                   sx={{ m: "10px 0 0 0" }}
                 >
-                  username
+                  {userName}
                 </Typography>
                 <Typography variant="h5" color={colors.greenAccent[500]}>
-                  admin
+                  {userRole}
                 </Typography>
               </Box>
             </Box>
@@ -141,107 +207,15 @@ const Sidebar = () => {
               selected={selected}
               setSelected={setSelected}
             />
-            {/*<Item
-              title="Your data"
-              // to="/"
-              icon={<FolderSharedRoundedIcon />}
-              // selected={selected}
-              // setSelected={setSelected}
-            />
-            
-             <Typography
-              variant="h6"
-              color={colors.grey[300]}
-              sx={{ m: "15px 0 5px 20px" }}
-            >
-              Data
-            </Typography>
+          {userRole === "ADMIN" && ( 
             <Item
-              title="Manage Team"
-              to="/team"
-              icon={<PeopleOutlinedIcon />}
+              title="Management"
+              to="/map"
+              icon={<HandymanOutlinedIcon />}
               selected={selected}
               setSelected={setSelected}
             />
-            <Item
-              title="Contacts Information"
-              to="/contacts"
-              icon={<ContactsOutlinedIcon />}
-              selected={selected}
-              setSelected={setSelected}
-            />
-            <Item
-              title="Invoices Balances"
-              to="/invoices"
-              icon={<ReceiptOutlinedIcon />}
-              selected={selected}
-              setSelected={setSelected}
-            />
-
-            <Typography
-              variant="h6"
-              color={colors.grey[300]}
-              sx={{ m: "15px 0 5px 20px" }}
-            >
-              Pages
-            </Typography>
-            <Item
-              title="Profile Form"
-              to="/form"
-              icon={<PersonOutlinedIcon />}
-              selected={selected}
-              setSelected={setSelected}
-            />
-            <Item
-              title="Calendar"
-              to="/calendar"
-              icon={<CalendarTodayOutlinedIcon />}
-              selected={selected}
-              setSelected={setSelected}
-            />
-            <Item
-              title="FAQ Page"
-              to="/faq"
-              icon={<HelpOutlineOutlinedIcon />}
-              selected={selected}
-              setSelected={setSelected}
-            />
-
-            <Typography
-              variant="h6"
-              color={colors.grey[300]}
-              sx={{ m: "15px 0 5px 20px" }}
-            >
-              Charts
-            </Typography>
-            <Item
-              title="Bar Chart"
-              to="/bar"
-              icon={<BarChartOutlinedIcon />}
-              selected={selected}
-              setSelected={setSelected}
-            />
-            <Item
-              title="Pie Chart"
-              to="/pie"
-              icon={<PieChartOutlineOutlinedIcon />}
-              selected={selected}
-              setSelected={setSelected}
-            />
-            <Item
-              title="Line Chart"
-              to="/line"
-              icon={<TimelineOutlinedIcon />}
-              selected={selected}
-              setSelected={setSelected}
-            />
-            <Item
-              title="Geography Chart"
-              to="/geography"
-              icon={<MapOutlinedIcon />}
-              selected={selected}
-              setSelected={setSelected}
-            /> */}
+          )}
           </Box>
         </Menu>
       </ProSidebar>

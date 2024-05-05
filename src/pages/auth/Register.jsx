@@ -82,7 +82,8 @@ export default function Register() {
         phone,
         termOfEmail,
         termOfSms,
-        role: "user",
+        role: "USER",
+        foto:"../../assets/user.png",
         createdAt: serverTimestamp(), 
       });
       console.log("User created successfully!");

@@ -14,9 +14,28 @@ import Typography from "@mui/material/Typography";
 import Container from "@mui/material/Container";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { useSignInWithEmailAndPassword } from "react-firebase-hooks/auth";
-import { auth } from "../../services/firebaseConfig";
+import { auth, firestore } from "../../services/firebaseConfig";
 import { AuthContext } from "../../services/authContext";
 import { useNavigate } from "react-router-dom";
+import { collection, doc, getDoc } from "firebase/firestore"; // Importe os métodos necessários do Firestore
+
+function LoadingAnimation() {
+  return (
+    <img
+      src="../../assets/loading.png"
+      alt="Loading..."
+      style={{
+        width: "500px", // Defina a largura da imagem
+        height: "500px", // Defina a altura da imagem
+        position: "absolute", // Posição absoluta para centralizar
+        top: "50%", // Alinhe a parte superior a 50% da tela
+        left: "50%", // Alinhe a esquerda a 50% da tela
+        transform: "translate(-50%, -50%)", // Translação para centralizar
+        animation: "shake 0.5s infinite alternate", // Adiciona uma animação CSS para fazer o shake
+      }}
+    />
+  );
+}
 
 function Copyright(props) {
   return (
@@ -41,32 +60,46 @@ const defaultTheme = createTheme();
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { setAuthenticated } = useContext(AuthContext);
+  const { setAuthenticated, setUserData } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const [signInWithEmailAndPassword, user, loading, error] =
     useSignInWithEmailAndPassword(auth);
 
-  const handleSignIn = (e) => {
+  const handleSignIn = async (e) => {
     e.preventDefault();
-    signInWithEmailAndPassword(email, password);
+    try {
+      const userCredential = await signInWithEmailAndPassword(email, password);
+      const user = userCredential.user;
+      const uid = user.uid;
+
+      const userCollectionRef = collection(firestore, "users");
+      const userRef = doc(userCollectionRef, uid);
+      const userSnapshot = await getDoc(userRef);
+
+      if (userSnapshot.exists()) {
+        const userData = userSnapshot.data();
+        console.log("Dados do usuário:", userData);
+        setUserData(userData);
+        setAuthenticated(true); // Definir autenticação como verdadeira
+        navigate("/"); // Navegar para a página inicial
+      } else {
+        console.log("Não foram encontrados dados do usuário no Firestore.");
+      }
+    } catch (error) {
+      console.error("Erro ao fazer login:", error);
+    }
   };
-
-  if (loading) {
-    return <p>Carregando...</p>;
-  }
-
-  if (user) {
-    console.log("Esse é o usuário:", user);
-    setAuthenticated(true);
-    navigate("/");
-  }
 
   const handleSubmit = (event) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
   };
 
+  if (loading) {
+    return <LoadingAnimation />;
+  }
+    
   return (
     <ThemeProvider theme={defaultTheme}>
       <CssBaseline />
