@@ -25,9 +25,9 @@ import MonthlyPeriodChart from "../components/charts/MonthlyPeriodChart";
 // ICONS:
 import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
 import ReviewsOutlinedIcon from "@mui/icons-material/ReviewsOutlined";
-import EmojiEmotionsOutlinedIcon from "@mui/icons-material/EmojiEmotionsOutlined";
-import SentimentNeutralOutlinedIcon from "@mui/icons-material/SentimentNeutralOutlined";
-import SentimentDissatisfiedOutlinedIcon from "@mui/icons-material/SentimentDissatisfiedOutlined";
+import SentimentVerySatisfiedIcon from '@mui/icons-material/SentimentVerySatisfied';
+import SentimentNeutralIcon from '@mui/icons-material/SentimentNeutral';
+import SentimentVeryDissatisfiedIcon from '@mui/icons-material/SentimentVeryDissatisfied';
 import CategoriesPieAndBarChart from "../components/charts/CategoriesPieAndBarChart";
 import CleaningServicesIcon from "@mui/icons-material/CleaningServices";
 import { SystemUpdateRounded } from "@mui/icons-material";
@@ -284,7 +284,7 @@ const Dashboard = () => {
                   : colors.primary[400],
             }}
             endIcon={
-              <EmojiEmotionsOutlinedIcon
+              <SentimentVerySatisfiedIcon
                 style={{ color: colors.greenAccent[600] }}
               />
             }
@@ -305,7 +305,7 @@ const Dashboard = () => {
                   : colors.primary[400],
             }}
             endIcon={
-              <SentimentNeutralOutlinedIcon style={{ color: "#ffa927" }} />
+              <SentimentNeutralIcon style={{ color: "#ffa927" }} />
             }
             sx={{
               padding: "10px 20px",
@@ -324,7 +324,7 @@ const Dashboard = () => {
                   : colors.primary[400],
             }}
             endIcon={
-              <SentimentDissatisfiedOutlinedIcon style={{ color: "#E0115F" }} />
+              <SentimentVeryDissatisfiedIcon style={{ color: "#E0115F" }} />
             }
             sx={{
               padding: "10px 20px",
@@ -444,7 +444,7 @@ const Dashboard = () => {
                 : 0
             }%`}
             icon={
-              <EmojiEmotionsOutlinedIcon
+              <SentimentVerySatisfiedIcon
                 sx={{ color: colors.greenAccent[600], fontSize: "26px" }}
               />
             }
@@ -472,7 +472,7 @@ const Dashboard = () => {
                 : 0
             }%`}
             icon={
-              <SentimentNeutralOutlinedIcon
+              <SentimentNeutralIcon
                 sx={{ color: "#ffa927", fontSize: "26px" }}
               />
             }
@@ -500,7 +500,7 @@ const Dashboard = () => {
                 : 0
             }%`}
             icon={
-              <SentimentDissatisfiedOutlinedIcon
+              <SentimentVeryDissatisfiedIcon
                 sx={{ color: "#E0115F", fontSize: "26px" }}
               />
             }
@@ -577,7 +577,7 @@ const Dashboard = () => {
         </Box>
         {/* MONTHLY PERIOD CHART */}
         <Box
-          gridColumn="span 4"
+          gridColumn="span 8"
           gridRow="span 2"
           backgroundColor={colors.primary[400]}
           p="30px"

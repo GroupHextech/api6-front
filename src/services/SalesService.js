@@ -1,5 +1,5 @@
-// const API_URL = "http://3.140.192.18:8000"
-const API_URL = "http://127.0.0.1:5000"
+const API_URL = "http://3.140.192.18:8000"
+// const API_URL = "http://127.0.0.1:5000"
 const API_URL_PREFIX = "api"
 
 export async function getGender(states, regions, feeling) {
