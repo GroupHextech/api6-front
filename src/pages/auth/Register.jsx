@@ -118,9 +118,12 @@ const handleAgreeTerms = (e) => {
     alert("Passwords do not match. Please enter matching passwords in both fields.");
     return;
   }
+  if (!email.endsWith('@hextech.com') && !email.endsWith('@imagem.com') && !email.endsWith('@gmail.com')) {
+    alert("Please enter a valid business email");
+    return;
+  }
+
   setShowTermsAlert(false);
-
-
   createUserWithEmailAndPassword(email, password)
     .then((userCredential) => {
       const user = userCredential.user;
@@ -215,7 +218,7 @@ const handleAgreeTerms = (e) => {
                       <div style={{width:"100%", justifyContent:"center", display:"flex"}}>
                         <img src="../../assets/dino-icon.svg" width={"80px"} />{" "}
                       </div>
-                      <Typography component="h1" variant="h5">
+                      <Typography component="h1" variant="h5" sx={{justifyContent:"center", display:"flex"}}>
                         Create Account
                       </Typography>
                       <Box
