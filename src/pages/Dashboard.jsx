@@ -29,7 +29,6 @@ import ReviewsOutlinedIcon from "@mui/icons-material/ReviewsOutlined";
 import SentimentVerySatisfiedIcon from "@mui/icons-material/SentimentVerySatisfied";
 import SentimentNeutralIcon from "@mui/icons-material/SentimentNeutral";
 import SentimentVeryDissatisfiedIcon from "@mui/icons-material/SentimentVeryDissatisfied";
-import CategoriesPieAndBarChart from "../components/charts/CategoriesPieAndBarChart";
 import CleaningServicesIcon from "@mui/icons-material/CleaningServices";
 
 // SERVICES:
