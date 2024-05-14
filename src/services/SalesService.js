@@ -83,6 +83,9 @@ export async function getFeelingByMonth(states, regions, feeling) {
       throw new Error('Failed to fetch feeling data');
     }
     const data = await response.json();
+
+    console.log("DATA: ", data);
+
     return data.list;
   } catch (error) {
     throw new Error(error.message);

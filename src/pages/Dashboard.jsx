@@ -26,9 +26,9 @@ import CategoriesPieAndBarChart from "../components/charts/CategoriesPieAndBarCh
 // ICONS:
 import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
 import ReviewsOutlinedIcon from "@mui/icons-material/ReviewsOutlined";
-import EmojiEmotionsOutlinedIcon from "@mui/icons-material/EmojiEmotionsOutlined";
-import SentimentNeutralOutlinedIcon from "@mui/icons-material/SentimentNeutralOutlined";
-import SentimentDissatisfiedOutlinedIcon from "@mui/icons-material/SentimentDissatisfiedOutlined";
+import SentimentVerySatisfiedIcon from "@mui/icons-material/SentimentVerySatisfied";
+import SentimentNeutralIcon from "@mui/icons-material/SentimentNeutral";
+import SentimentVeryDissatisfiedIcon from "@mui/icons-material/SentimentVeryDissatisfied";
 import CleaningServicesIcon from "@mui/icons-material/CleaningServices";
 
 // SERVICES:
@@ -52,21 +52,21 @@ const Dashboard = () => {
   const colors = tokens(theme.palette.mode);
 
   const [filter, setFilter] = useState({});
-  const [selectedFeeling, setSelectedFeeling] = useState("");
+  const [selectedSentiment, setSelectedSentiment] = useState("");
   const [feelingData, setFeelingData] = useState({
     total: 0,
     positive: 0,
     neutral: 0,
     negative: 0,
   });
-  const [chartType, setChartType] = useState("pie"); // Default chart type
-  const [selectedRegions, setSelectedRegions] = useState(["Todas"]);
-  const [selectedStates, setSelectedStates] = useState(["São Paulo"]);
+  const [chartType, setChartType] = useState("bar"); // Default chart type
+  const [selectedRegions, setSelectedRegions] = useState([]);
+  const [selectedStates, setSelectedStates] = useState([]);
 
   const handleClearFilters = () => {
     setSelectedRegions([]);
     setSelectedStates([]);
-    setSelectedFeeling("");
+    setSelectedSentiment("");
   };
 
   const regioesDoBrasil = {
@@ -186,7 +186,7 @@ const Dashboard = () => {
         states = selectedStates.map((state) => getAbbreviation(state));
       }
 
-      feeling = selectedFeeling;
+      feeling = selectedSentiment;
 
       try {
         if (states.length || regions.length) {
@@ -215,7 +215,7 @@ const Dashboard = () => {
     }
 
     handleFeelingData();
-  }, [selectedRegions, selectedStates, selectedFeeling]);
+  }, [selectedRegions, selectedStates, selectedSentiment]);
 
   const handleChangeRegion = (event, child) => {
     let selectedOptions = event.target.value;
@@ -249,11 +249,10 @@ const Dashboard = () => {
   };
 
   const handleFeelingClick = (event) => {
-    setSelectedFeeling(event.target.value);
-    console.log("Feeling clicked:", event.target.value);
+    setSelectedSentiment(event.target.value);
   };
 
-  const [allRegionsSelected, setAllRegionsSelected] = useState(true);
+  const [allRegionsSelected, setAllRegionsSelected] = useState(false);
 
   const handleDownloadReport = () => {
     const doc = new Document({
@@ -313,13 +312,13 @@ const Dashboard = () => {
             onClick={handleFeelingClick}
             style={{
               backgroundColor:
-                selectedFeeling === "Positive"
+                selectedSentiment === "Positive"
                   ? colors.grey[550]
                   : colors.primary[400],
             }}
             endIcon={
-              <EmojiEmotionsOutlinedIcon
-                style={{ color: colors.greenAccent[600] }}
+              <SentimentVerySatisfiedIcon
+                style={{ color: colors.greenAccent[500] }}
               />
             }
             sx={{
@@ -334,13 +333,11 @@ const Dashboard = () => {
             onClick={handleFeelingClick}
             style={{
               backgroundColor:
-                selectedFeeling === "Neutral"
+                selectedSentiment === "Neutral"
                   ? colors.grey[550]
                   : colors.primary[400],
             }}
-            endIcon={
-              <SentimentNeutralOutlinedIcon style={{ color: "#ffa927" }} />
-            }
+            endIcon={<SentimentNeutralIcon style={{ color: "#ffa927" }} />}
             sx={{
               padding: "10px 20px",
             }}
@@ -353,12 +350,12 @@ const Dashboard = () => {
             onClick={handleFeelingClick}
             style={{
               backgroundColor:
-                selectedFeeling === "Negative"
+                selectedSentiment === "Negative"
                   ? colors.grey[550]
                   : colors.primary[400],
             }}
             endIcon={
-              <SentimentDissatisfiedOutlinedIcon style={{ color: "#E0115F" }} />
+              <SentimentVeryDissatisfiedIcon style={{ color: "#E0115F" }} />
             }
             sx={{
               padding: "10px 20px",
@@ -424,7 +421,7 @@ const Dashboard = () => {
           }}
           onClick={handleClearFilters}
         >
-          <CleaningServicesIcon style={{ color: "#70d8bd" }} />
+          <CleaningServicesIcon style={{ color: colors.greenAccent[500] }} />
         </Button>
       </Box>
 
@@ -451,7 +448,7 @@ const Dashboard = () => {
             increase="100%"
             icon={
               <ReviewsOutlinedIcon
-                sx={{ color: colors.greenAccent[600], fontSize: "26px" }}
+                sx={{ color: colors.greenAccent[500], fontSize: "26px" }}
               />
             }
           />
@@ -478,8 +475,8 @@ const Dashboard = () => {
                 : 0
             }%`}
             icon={
-              <EmojiEmotionsOutlinedIcon
-                sx={{ color: colors.greenAccent[600], fontSize: "26px" }}
+              <SentimentVerySatisfiedIcon
+                sx={{ color: colors.greenAccent[500], fontSize: "26px" }}
               />
             }
           />
@@ -506,7 +503,7 @@ const Dashboard = () => {
                 : 0
             }%`}
             icon={
-              <SentimentNeutralOutlinedIcon
+              <SentimentNeutralIcon
                 sx={{ color: "#ffa927", fontSize: "26px" }}
               />
             }
@@ -534,14 +531,69 @@ const Dashboard = () => {
                 : 0
             }%`}
             icon={
-              <SentimentDissatisfiedOutlinedIcon
+              <SentimentVeryDissatisfiedIcon
                 sx={{ color: "#E0115F", fontSize: "26px" }}
               />
             }
           />
         </Box>
         {/* ROW 2 */}
-        {/*   -- INSERT ROW 2 CONTENT HERE -- */}
+        {/* REVIEW SENTIMENT BY MONTH */}
+        <Box
+          gridColumn="span 8"
+          gridRow="span 2"
+          backgroundColor={colors.primary[400]}
+          p="30px"
+          display="flex"
+          flexDirection="column"
+          // mt="25px"
+        >
+          <Typography variant="h5" fontWeight="600">
+            Review sentiment by month
+          </Typography>
+          <Box height="250px" m="0 0 0 0">
+            <MonthlyPeriodChart
+              filter={filter}
+              selectedSentiment={selectedSentiment}
+            />
+          </Box>
+        </Box>
+        {/*   REVIEWS BY CATEGORY  */}
+        <Box
+          gridColumn="span 4"
+          gridRow="span 2"
+          backgroundColor={colors.primary[400]}
+          // mt="25px"
+        >
+          <Box
+            mt="25px"
+            p="0 30px"
+            display="flex "
+            justifyContent="space-between"
+            alignItems="center"
+          >
+            <Box>
+              <Typography variant="h5" fontWeight="600">
+                Reviews by category
+              </Typography>
+            </Box>
+            <Box>
+              <Button
+                variant="contained"
+                onClick={() =>
+                  setChartType((prevChartType) =>
+                    prevChartType === "bar" ? "pie" : "bar"
+                  )
+                } // Use a seta para chamar a função
+              >
+                Alternar Gráfico
+              </Button>
+            </Box>
+          </Box>
+          <Box height="250px" m="0 0 0 0">
+            <CategoriesPieAndBarChart chartType={chartType} filter={filter} />
+          </Box>
+        </Box>
         {/* ROW 3 */}
         {/*   GENDER */}
         <Box
@@ -572,59 +624,6 @@ const Dashboard = () => {
             Sales by period
           </Typography>
           <SalesBarChart filter={filter} />
-        </Box>
-        {/*   REVIEWS BY CATEGORY  */}
-        <Box
-          gridColumn="span 4"
-          gridRow="span 2"
-          backgroundColor={colors.primary[400]}
-          // mt="25px"
-        >
-          <Box
-            mt="25px"
-            p="0 30px"
-            display="flex "
-            justifyContent="space-between"
-            alignItems="center"
-          >
-            <Box>
-              <Typography variant="h5" fontWeight="600">
-                Reviews by category
-              </Typography>
-            </Box>
-            <Box>
-              <Button
-                variant="contained"
-                onClick={() =>
-                  setChartType((prevChartType) =>
-                    prevChartType === "pie" ? "bar" : "pie"
-                  )
-                } // Use a seta para chamar a função
-              >
-                Alternar Gráfico
-              </Button>
-            </Box>
-          </Box>
-          <Box height="250px" m="0 0 0 0">
-            <CategoriesPieAndBarChart chartType={chartType} filter={filter} />
-          </Box>
-        </Box>
-        {/* MONTHLY PERIOD CHART */}
-        <Box
-          gridColumn="span 4"
-          gridRow="span 2"
-          backgroundColor={colors.primary[400]}
-          p="30px"
-          display="flex"
-          flexDirection="column"
-          // mt="25px"
-        >
-          <Typography variant="h5" fontWeight="600">
-            Number of sales per month
-          </Typography>
-          <Box height="250px" m="0 0 0 0">
-            <MonthlyPeriodChart filter={filter} />
-          </Box>
         </Box>
       </Box>
 
