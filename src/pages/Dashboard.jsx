@@ -21,6 +21,7 @@ import StatBox from "../components/StatBox";
 import GenderPieChart from "../components/charts/GenderPieChart";
 import SalesBarChart from "../components/charts/SalesBarChart";
 import MonthlyPeriodChart from "../components/charts/MonthlyPeriodChart";
+import CategoriesPieAndBarChart from "../components/charts/CategoriesPieAndBarChart";
 
 // ICONS:
 import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
@@ -30,8 +31,11 @@ import SentimentNeutralIcon from "@mui/icons-material/SentimentNeutral";
 import SentimentVeryDissatisfiedIcon from "@mui/icons-material/SentimentVeryDissatisfied";
 import CategoriesPieAndBarChart from "../components/charts/CategoriesPieAndBarChart";
 import CleaningServicesIcon from "@mui/icons-material/CleaningServices";
-import { SystemUpdateRounded } from "@mui/icons-material";
+
+// SERVICES:
 import { getFeeling } from "../services/SalesService";
+import { saveAs } from 'file-saver';
+import { Document, Packer, Paragraph, TextRun } from 'docx';
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -251,6 +255,36 @@ const Dashboard = () => {
 
   const [allRegionsSelected, setAllRegionsSelected] = useState(false);
 
+  const handleDownloadReport = () => {
+    const doc = new Document({
+      sections: [{
+        properties: {},
+        children: [
+          new Paragraph({
+            children: [
+              new TextRun("Ralatório HexAnalytics"),
+              new TextRun({
+                text: "Foo Bar",
+                bold: true,
+              }),
+              new TextRun({
+                text: "\tExemplos",
+                bold: true,
+              }),
+            ],
+          }),
+        ],
+      }]
+    });
+
+    Packer.toBlob(doc).then(blob => {
+      console.log(blob);
+      saveAs(blob, "relatorio.docx");
+      console.log("Document created successfully");
+    });
+  }
+  
+
   return (
     <Box m="20px">
       {/* HEADER */}
@@ -265,6 +299,7 @@ const Dashboard = () => {
               fontWeight: "bold",
               padding: "10px 20px",
             }}
+            onClick={handleDownloadReport}
           >
             <DownloadOutlinedIcon />
           </Button>
