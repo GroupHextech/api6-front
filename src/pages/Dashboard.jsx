@@ -625,7 +625,28 @@ const Dashboard = () => {
           </Typography>
           <SalesBarChart filter={filter} />
         </Box>
+
+        {/* SALES BY PERIOD 2*/}
+        <Box
+          gridColumn="span 4"
+          gridRow="span 2"
+          backgroundColor={colors.primary[400]}
+          p="20px"
+          display="flex"
+          flexDirection="column"
+          // mt="25px"
+        >
+          
+          <div>
+            <iframe title="pb_top_words"  height="270" src="https://app.powerbi.com/view?r=eyJrIjoiZmFiMmM5NmYtMTQ1OC00YjgzLWFlYzgtNGM5ODVhYzY1YTE5IiwidCI6IjM0YzA5YmM0LTVmYjQtNDc2Zi05NGVjLTYxMDcwZWE1MDE3OSJ9" frameborder="0" allowFullScreen="true">
+              </iframe>
+            </div>
+        </Box>
+
       </Box>
+
+      
+
 
       <Grid container spacing={2}>
         {/* Chart */}
