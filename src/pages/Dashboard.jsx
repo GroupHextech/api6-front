@@ -36,6 +36,11 @@ import { getFeeling } from "../services/SalesService";
 import { saveAs } from 'file-saver';
 import { Document, Packer, Paragraph, TextRun } from 'docx';
 
+//
+import { Dialog, DialogTitle, DialogContent, IconButton } from "@mui/material";
+import CloseIcon from '@mui/icons-material/Close';
+
+
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
 const MenuProps = {
@@ -50,6 +55,11 @@ const MenuProps = {
 const Dashboard = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
+
+  const [openModal, setOpenModal] = useState(false);
+
+  const handleOpenModal = () => setOpenModal(true);
+  const handleCloseModal = () => setOpenModal(false);
 
   const [filter, setFilter] = useState({});
   const [selectedSentiment, setSelectedSentiment] = useState("");
@@ -298,12 +308,51 @@ const Dashboard = () => {
               fontWeight: "bold",
               padding: "10px 20px",
             }}
+            onClick={handleOpenModal}
+          >
+            Show Top Words
+          </Button>
+          <Button
+            sx={{
+              backgroundColor: colors.blueAccent[700],
+              color: colors.grey[100],
+              fontSize: "14px",
+              fontWeight: "bold",
+              padding: "10px 20px",
+              marginLeft: "10px"
+            }}
             onClick={handleDownloadReport}
           >
             <DownloadOutlinedIcon />
           </Button>
         </Box>
       </Box>
+      
+      <Dialog open={openModal} onClose={handleCloseModal}>
+        <DialogTitle>
+          <IconButton
+            aria-label="close"
+            onClick={handleCloseModal}
+            sx={{
+              position: 'absolute',
+              right: 1,
+              top: 1,
+              color: (theme) => theme.palette.grey[500],
+              
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="h6" gutterBottom>
+          <div>
+            <iframe title="pb_top_words" width="400" height="300" src="https://app.powerbi.com/view?r=eyJrIjoiZmFiMmM5NmYtMTQ1OC00YjgzLWFlYzgtNGM5ODVhYzY1YTE5IiwidCI6IjM0YzA5YmM0LTVmYjQtNDc2Zi05NGVjLTYxMDcwZWE1MDE3OSJ9" frameborder="0" allowFullScreen="true"></iframe>
+          </div>
+          </Typography>
+        </DialogContent>
+      </Dialog>
+
       <Box display="flex" justifyContent="space-between" alignItems="center">
         <Stack direction="row" spacing={2}>
           <Button
@@ -625,28 +674,7 @@ const Dashboard = () => {
           </Typography>
           <SalesBarChart filter={filter} />
         </Box>
-
-        {/* SALES BY PERIOD 2*/}
-        <Box
-          gridColumn="span 4"
-          gridRow="span 2"
-          backgroundColor={colors.primary[400]}
-          p="20px"
-          display="flex"
-          flexDirection="column"
-          // mt="25px"
-        >
-          
-          <div>
-            <iframe title="pb_top_words"  height="270" src="https://app.powerbi.com/view?r=eyJrIjoiZmFiMmM5NmYtMTQ1OC00YjgzLWFlYzgtNGM5ODVhYzY1YTE5IiwidCI6IjM0YzA5YmM0LTVmYjQtNDc2Zi05NGVjLTYxMDcwZWE1MDE3OSJ9" frameborder="0" allowFullScreen="true">
-              </iframe>
-            </div>
-        </Box>
-
       </Box>
-
-      
-
 
       <Grid container spacing={2}>
         {/* Chart */}
