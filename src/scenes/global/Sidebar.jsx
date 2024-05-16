@@ -210,7 +210,7 @@ const Sidebar = () => {
           {userRole === "ADMIN" && ( 
             <Item
               title="Management"
-              to="/map"
+              to="/manege"
               icon={<HandymanOutlinedIcon />}
               selected={selected}
               setSelected={setSelected}
