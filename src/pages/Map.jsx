@@ -23,7 +23,7 @@ export default function Map() {
   const colors = tokens(theme.palette.mode);
 
   const [feeling, setFeeling] = React.useState("todos");
-  const [activeMap, setActiveMap] = React.useState("Vendas (Geral)");
+  const [activeMap, setActiveMap] = React.useState("Reviews");
   const [selectedRegion, setSelectedRegion] = React.useState("Todas");
   const [activeStates, setActiveStates] = React.useState([
     "AC",

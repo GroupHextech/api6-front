@@ -19,6 +19,7 @@ const HeatMapChart = ({filter}) => {
       try {
         // Obtendo os dados calculados
         const data = await getStates(filter.activeStates, null, feeling);
+        console.log('dados calculados', data);
 
         // Convertendo os dados calculados para o formato necessário para o mapa de calor
         const formattedStateData = [];
@@ -62,11 +63,40 @@ const HeatMapChart = ({filter}) => {
     polygonTemplate.tooltipText = '{name}: {value}';
     polygonTemplate.fill = am4core.color('#CCCCCC');
 
+    // Determinar as cores com base no sentimento do filtro
+    const getHeatColors = (feeling) => {
+      switch(feeling) {
+        case 'Positive':
+          return {
+            min: am4core.color('#C5E1A5'), // Verde claro
+            max: am4core.color('#388E3C')  // Verde escuro
+          };
+        case 'Neutral':
+          return {
+            min: am4core.color('#fff081'), // Amarelo claro
+            max: am4core.color('#FBC02D')  // Amarelo escuro
+          };
+        case 'Negative':
+          return {
+            min: am4core.color('#EF9A9A'), // Vermelho claro
+            max: am4core.color('#D32F2F')  // Vermelho escuro
+          };
+        default:
+          return {
+            min: am4core.color('#9fb2c4'), // Azul claro
+            max: am4core.color('#032e59')  // Azul escuro
+          };
+      }
+    };
+
+    // Aplicar as cores apropriadas
+    const heatColors = getHeatColors(filter.feeling);
+
     polygonSeries.heatRules.push({
       property: 'fill',
       target: polygonSeries.mapPolygons.template,
-      min: am4core.color('#9fb2c4'),
-      max: am4core.color('#032e59'),
+      min: heatColors.min,
+      max: heatColors.max,
     });
 
     // Dados dos estados
