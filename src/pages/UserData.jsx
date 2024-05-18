@@ -1,34 +1,28 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import Paper from "@mui/material/Paper";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Checkbox from "@mui/material/Checkbox";
 import FormControlLabel from "@mui/material/FormControlLabel";
-import BaseLayout from "../layouts/BaseLayout";
-import { useContext } from "react";
-import { AuthContext } from "../services/authContext";
-import { updateDoc, doc, deleteDoc } from "firebase/firestore";
+import { updateDoc, doc, addDoc, collection } from "firebase/firestore";
 import { firestore, storage } from "../services/firebaseConfig";
 import ConfirmationDialog from "../components/ConfirmationDialog";
-import { deleteUser } from "firebase/auth";
+import { AuthContext } from "../services/authContext";
 import { useNavigate } from "react-router-dom";
 import { getDownloadURL, ref } from "firebase/storage";
 import TypingEffect from "../components/TypingFunc/Typing";
 
 export default function UserData() {
   const { userData, currentUser } = useContext(AuthContext);
-
   const [emailTermAccepted, setEmailTermAccepted] = useState(userData.termOfEmail);
   const [smsTermAccepted, setSmsTermAccepted] = useState(userData.termOfSms);
   const [useTermAccepted, setUseTermAccepted] = useState(userData.useTerm);
   const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
-  const [audio, setAudio] = useState(null); 
-  const [musicUrl, setMusicUrl] = useState(null); 
-  
-  const texts = [
-    "Obrigado Mineda",
-  ];
+  const [showDeleteFieldsDialog, setShowDeleteFieldsDialog] = useState(false);
+  const [audio, setAudio] = useState(null);
+  const [musicUrl, setMusicUrl] = useState(null);
 
+  const texts = ["Obrigado Mineda"];
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -56,14 +50,40 @@ export default function UserData() {
     }
   };
 
-  const handleDeleteAccount = async () => {
+  const handleDeleteRequest = async () => {
+    try {
+      await addDoc(collection(firestore, "deletionRequests"), {
+        userId: currentUser.uid,
+        userName: userData.name,
+        userEmail: currentUser.email,
+        requestedAt: new Date(),
+        status: "pending",
+      });
+      setShowConfirmationDialog(false);
+      alert("Solicitação de exclusão enviada ao administrador.");
+    } catch (error) {
+      console.error("Erro ao enviar solicitação de exclusão:", error);
+    }
+  };
+
+  const handleDeleteFields = async () => {
     try {
       const userRef = doc(firestore, "users", currentUser.uid);
-      await deleteDoc(userRef);
-      await deleteUser(currentUser);
-      navigate("/login")
+      await updateDoc(userRef, {
+        phone: "",
+        name: "inactive",
+      });
+      await addDoc(collection(firestore, "deletionRequests"), {
+        userId: currentUser.uid,
+        userName: userData.name,
+        userEmail: currentUser.email,
+        requestedAt: new Date(),
+        status: "pending",
+      });
+      setShowDeleteFieldsDialog(false);
+      alert("Solicitação de exclusão de campos enviada ao administrador.");
     } catch (error) {
-      console.error("Erro ao excluir a conta do usuário:", error);
+      console.error("Erro ao excluir campos e enviar solicitação:", error);
     }
   };
 
@@ -71,7 +91,7 @@ export default function UserData() {
     try {
       const musicStorageRef = ref(storage, 'musica.mp3');
       const url = await getDownloadURL(musicStorageRef);
-      setMusicUrl(url); 
+      setMusicUrl(url);
     } catch (error) {
       console.error("Erro ao reproduzir a música:", error);
     }
@@ -79,14 +99,14 @@ export default function UserData() {
 
   useEffect(() => {
     if (musicUrl) {
-      const audioElement = new Audio(musicUrl); 
-      setAudio(audioElement); 
-      audioElement.play(); 
+      const audioElement = new Audio(musicUrl);
+      setAudio(audioElement);
+      audioElement.play();
     }
   }, [musicUrl]);
 
   return (
-    <Box style={{}}>
+    <Box>
       <Box
         style={{
           flex: 0.8,
@@ -208,41 +228,39 @@ export default function UserData() {
             <Paper style={{padding:4,display:"flex", justifyContent:"space-between", width:"40%"}}>
               <div>Use Term :</div>
               <div>{getTermStatus(userData.useTerm)}</div>
-              
-              {userData.role === "USER" && (
               <Button
                 variant="contained"
                 color="error"
-                onClick={() => setShowConfirmationDialog(true)}
+                onClick={() => setShowDeleteFieldsDialog(true)}
               >
-                Edit
+                I disagree
               </Button>
-              )}
             </Paper>
-            <ConfirmationDialog
-              open={showConfirmationDialog}
-              onClose={() => setShowConfirmationDialog(false)}
-              onConfirm={handleDeleteAccount}
-              title="Delete account"
-              content="Please note that failure to comply with the terms of use may result in the deletion of your account, along with all associated data. (A deletion request will be sent to the administrator)"
-            />
+
             {userData.role === "USER" && (
-            <Paper style={{padding:4,display:"flex", justifyContent:"center", width:"40%"}}>
-              <Button
-                variant="contained"
-                color="error"
-                onClick={() => setShowConfirmationDialog(true)}
-              >
-                Delete Account
-              </Button>
-            </Paper>
+              <Paper style={{padding:4,display:"flex", justifyContent:"center", width:"40%"}}>
+                <Button
+                  variant="contained"
+                  color="error"
+                  onClick={() => setShowConfirmationDialog(true)}
+                >
+                  Delete Account
+                </Button>
+              </Paper>
             )}
             <ConfirmationDialog
               open={showConfirmationDialog}
               onClose={() => setShowConfirmationDialog(false)}
-              onConfirm={handleDeleteAccount}
+              onConfirm={handleDeleteRequest}
               title="Delete account"
-              content="This action result in the deletion of your account along with all associated data. (A deletion request will be sent to the administrator)"
+              content="Esta ação enviará uma solicitação de exclusão de sua conta para o administrador. Você será notificado quando a solicitação for processada."
+            />
+            <ConfirmationDialog
+              open={showDeleteFieldsDialog}
+              onClose={() => setShowDeleteFieldsDialog(false)}
+              onConfirm={handleDeleteFields}
+              title="EDIT"
+              content="Esta ação excluirá seus dados pessoais, porém seus dados intitucionais continuarão em nossa base e também enviaremos uma solicitação de exclusão de conta para o administrador para avaliação."
             />
           </Paper>
         </div>
