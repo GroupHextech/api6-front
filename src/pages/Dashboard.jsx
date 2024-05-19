@@ -35,6 +35,9 @@ import CleaningServicesIcon from "@mui/icons-material/CleaningServices";
 import { getFeeling } from "../services/SalesService";
 import { saveAs } from 'file-saver';
 import { Document, Packer, Paragraph, TextRun } from 'docx';
+import { createDocxContent } from "../services/docxContent";
+import { useRef } from "react";
+import domtoimage from 'dom-to-image-more';
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -62,6 +65,9 @@ const Dashboard = () => {
   const [chartType, setChartType] = useState("bar"); // Default chart type
   const [selectedRegions, setSelectedRegions] = useState([]);
   const [selectedStates, setSelectedStates] = useState([]);
+
+  const genderChartRef = useRef(null);
+  const sentimentByMonthRef = useRef(null);
 
   const handleClearFilters = () => {
     setSelectedRegions([]);
@@ -254,35 +260,25 @@ const Dashboard = () => {
 
   const [allRegionsSelected, setAllRegionsSelected] = useState(false);
 
-  const handleDownloadReport = () => {
-    const doc = new Document({
-      sections: [{
-        properties: {},
-        children: [
-          new Paragraph({
-            children: [
-              new TextRun("Ralatório HexAnalytics"),
-              new TextRun({
-                text: "Foo Bar",
-                bold: true,
-              }),
-              new TextRun({
-                text: "\tExemplos",
-                bold: true,
-              }),
-            ],
-          }),
-        ],
-      }]
-    });
+  const handleDownloadReport = async () => {
+    const genderChartBlob = await exportChartToPng(genderChartRef);
+    const sentimentByMonthChartBlob = await exportChartToPng(sentimentByMonthRef);
+
+    const doc = createDocxContent(feelingData, genderChartBlob, sentimentByMonthChartBlob)
 
     Packer.toBlob(doc).then(blob => {
       console.log(blob);
-      saveAs(blob, "relatorio.docx");
+      saveAs(blob, "relatorioDashboard.docx");
       console.log("Document created successfully");
     });
   }
-  
+
+  const exportChartToPng = async (myRef) => {
+    if (myRef.current) {
+      const blob = await domtoimage.toBlob(myRef.current);
+      return blob
+    }
+  };
 
   return (
     <Box m="20px">
@@ -469,11 +465,10 @@ const Dashboard = () => {
                 ? feelingData.positive / feelingData.total
                 : 0
             }
-            increase={`${
-              feelingData.total !== 0
+            increase={`${feelingData.total !== 0
                 ? ((feelingData.positive * 100) / feelingData.total).toFixed(2)
                 : 0
-            }%`}
+              }%`}
             icon={
               <SentimentVerySatisfiedIcon
                 sx={{ color: colors.greenAccent[500], fontSize: "26px" }}
@@ -497,11 +492,10 @@ const Dashboard = () => {
                 ? feelingData.neutral / feelingData.total
                 : 0
             }
-            increase={`${
-              feelingData.total !== 0
+            increase={`${feelingData.total !== 0
                 ? ((feelingData.neutral * 100) / feelingData.total).toFixed(2)
                 : 0
-            }%`}
+              }%`}
             icon={
               <SentimentNeutralIcon
                 sx={{ color: "#ffa927", fontSize: "26px" }}
@@ -525,11 +519,10 @@ const Dashboard = () => {
                 ? feelingData.negative / feelingData.total
                 : 0
             }
-            increase={`${
-              feelingData.total !== 0
+            increase={`${feelingData.total !== 0
                 ? ((feelingData.negative * 100) / feelingData.total).toFixed(2)
                 : 0
-            }%`}
+              }%`}
             icon={
               <SentimentVeryDissatisfiedIcon
                 sx={{ color: "#E0115F", fontSize: "26px" }}
@@ -540,13 +533,14 @@ const Dashboard = () => {
         {/* ROW 2 */}
         {/* REVIEW SENTIMENT BY MONTH */}
         <Box
+          ref={sentimentByMonthRef}
           gridColumn="span 8"
           gridRow="span 2"
           backgroundColor={colors.primary[400]}
           p="30px"
           display="flex"
           flexDirection="column"
-          // mt="25px"
+        // mt="25px"
         >
           <Typography variant="h5" fontWeight="600">
             Review sentiment by month
@@ -563,7 +557,7 @@ const Dashboard = () => {
           gridColumn="span 4"
           gridRow="span 2"
           backgroundColor={colors.primary[400]}
-          // mt="25px"
+        // mt="25px"
         >
           <Box
             mt="25px"
@@ -597,13 +591,14 @@ const Dashboard = () => {
         {/* ROW 3 */}
         {/*   GENDER */}
         <Box
+          ref={genderChartRef}
           gridColumn="span 4"
           gridRow="span 2"
           backgroundColor={colors.primary[400]}
           p="30px"
           display="flex"
           flexDirection="column"
-          // mt="25px"
+        // mt="25px"
         >
           <Typography variant="h5" fontWeight="600">
             Gender
@@ -618,7 +613,7 @@ const Dashboard = () => {
           p="30px"
           display="flex"
           flexDirection="column"
-          // mt="25px"
+        // mt="25px"
         >
           <Typography variant="h5" fontWeight="600">
             Sales by period
