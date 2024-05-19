@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   Checkbox,
   FormControl,
@@ -12,6 +12,9 @@ import {
 
 import { Box, Button, Typography, useTheme, Stack } from "@mui/material";
 import { tokens } from "../theme";
+import domtoimage from 'dom-to-image-more';
+import { createDocxContent } from "../reports/Docx/DashboardReport";
+import { Packer } from 'docx';
 
 // COMPONENTS:
 import Header from "../components/Header";
@@ -34,10 +37,6 @@ import CleaningServicesIcon from "@mui/icons-material/CleaningServices";
 // SERVICES:
 import { getFeeling } from "../services/SalesService";
 import { saveAs } from 'file-saver';
-import { Document, Packer, Paragraph, TextRun } from 'docx';
-import { createDocxContent } from "../services/docxContent";
-import { useRef } from "react";
-import domtoimage from 'dom-to-image-more';
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -62,6 +61,7 @@ const Dashboard = () => {
     neutral: 0,
     negative: 0,
   });
+  const [feelingAll, setFeelingAll] = useState(undefined);
   const [chartType, setChartType] = useState("bar"); // Default chart type
   const [selectedRegions, setSelectedRegions] = useState([]);
   const [selectedStates, setSelectedStates] = useState([]);
@@ -165,6 +165,7 @@ const Dashboard = () => {
     "TO",
   ];
 
+
   function getAbbreviation(fullStateName) {
     const index = regioesDoBrasil.Todas.indexOf(fullStateName);
     if (index !== -1) {
@@ -214,6 +215,7 @@ const Dashboard = () => {
         });
 
         setFeelingData(finalFeelingData);
+        if (!feelingAll) setFeelingAll({...finalFeelingData})
         setFilter({ states, regions, feeling });
       } catch (error) {
         console.error("Error fetching feeling data:", error.message);
@@ -264,11 +266,11 @@ const Dashboard = () => {
     const genderChartBlob = await exportChartToPng(genderChartRef);
     const sentimentByMonthChartBlob = await exportChartToPng(sentimentByMonthRef);
 
-    const doc = createDocxContent(feelingData, genderChartBlob, sentimentByMonthChartBlob)
+    const doc = createDocxContent(feelingAll, feelingData, genderChartBlob, sentimentByMonthChartBlob)
 
     Packer.toBlob(doc).then(blob => {
       console.log(blob);
-      saveAs(blob, "relatorioDashboard.docx");
+      saveAs(blob, "Dashboard_Report.docx");
       console.log("Document created successfully");
     });
   }
