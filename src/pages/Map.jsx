@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import Paper from "@mui/material/Paper";
 // import Box from "@mui/material/Box";
 // import Button from "@mui/material/Button";
@@ -11,16 +11,24 @@ import FormControl from "@mui/material/FormControl";
 import FormLabel from "@mui/material/FormLabel";
 import Chip from "@mui/material/Chip";
 // import Stack from "@mui/material/Stack";
-import CleaningServicesIcon from "@mui/icons-material/CleaningServices";
 import { Box, Button, Typography, useTheme, Stack } from "@mui/material";
 import { tokens } from "../theme";
+import domtoimage from 'dom-to-image-more';
+import { createDocxContent } from "../reports/Docx/MapReport";
+import { Packer } from 'docx';
 
 // COMPONENTS:
 import Header from "../components/Header";
 
+// ICONS:
+import CleaningServicesIcon from "@mui/icons-material/CleaningServices";
+import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
+
 export default function Map() {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
+
+  const mapRef = useRef(null);
 
   const [feeling, setFeeling] = React.useState("todos");
   const [activeMap, setActiveMap] = React.useState("Vendas (Geral)");
@@ -139,6 +147,25 @@ export default function Map() {
     setFilter(newFilter);
   };
 
+  const handleDownloadReport = async () => {
+    const mapBlob = await exportChartToPng(mapRef);
+
+    const doc = createDocxContent(mapBlob, feeling, selectedRegion, activeStates)
+
+    Packer.toBlob(doc).then(blob => {
+      console.log(blob);
+      saveAs(blob, "Map_Report.docx");
+      console.log("Document created successfully");
+    });
+  }
+
+  const exportChartToPng = async (myRef) => {
+    if (myRef.current) {
+      const blob = await domtoimage.toBlob(myRef.current);
+      return blob
+    }
+  };
+
   return (
     <Box style={{}}>
       <Box
@@ -152,6 +179,20 @@ export default function Map() {
             alignItems="center"
           >
             <Header title="MAP" subtitle={activeMap} />
+            <Box>
+              <Button
+                sx={{
+                  backgroundColor: colors.blueAccent[700],
+                  color: colors.grey[100],
+                  fontSize: "14px",
+                  fontWeight: "bold",
+                  padding: "10px 20px",
+                }}
+                onClick={handleDownloadReport}
+              >
+                <DownloadOutlinedIcon />
+              </Button>
+            </Box>
           </Box>
         </Box>
 
@@ -408,6 +449,7 @@ export default function Map() {
             </div>
           </Box>
           <Box
+            ref={mapRef}
             gridColumn="span 3"
             backgroundColor={colors.primary[400]}
             display="flex"
