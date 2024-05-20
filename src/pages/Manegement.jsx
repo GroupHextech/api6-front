@@ -1,13 +1,11 @@
 import React, { useEffect, useState } from "react";
 import {
   Box,
-  Button,
   Typography,
   useTheme,
   Stack,
   TextField,
   IconButton,
-  Paper
 } from "@mui/material";
 import { tokens } from "../theme";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -15,8 +13,10 @@ import BlockIcon from "@mui/icons-material/Block";
 import { collection, getDocs, deleteDoc, doc, updateDoc } from "firebase/firestore";
 import { getFirestore } from "firebase/firestore";
 import Header from "../components/Header";
+import { getAuth, deleteUser } from "firebase/auth";
 
 const db = getFirestore();
+const auth = getAuth();
 
 export default function Management() {
   const theme = useTheme();
@@ -36,13 +36,16 @@ export default function Management() {
       }));
       setUsers(usersList);
 
-      // Fetch deletion requests
+      // Fetch deletion requests and filter out declined requests
       const requestsCollection = collection(db, "deletionRequests");
       const requestsSnapshot = await getDocs(requestsCollection);
-      const requestsList = requestsSnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
+      const requestsList = requestsSnapshot.docs
+        .map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }))
+        .filter((request) => request.status !== "declined"); // Filter out declined requests
+
       setDeletionRequests(requestsList);
     }
 
@@ -50,22 +53,40 @@ export default function Management() {
   }, []);
 
   const handleDeleteUser = async (userId) => {
-    await deleteDoc(doc(db, "users", userId));
-    setUsers(users.filter((user) => user.id !== userId));
+    try {
+      // Delete the user from Firebase Authentication
+      await deleteUser(auth.currentUser);
+
+      // Delete the user from Firestore
+      await deleteDoc(doc(db, "users", userId));
+
+      setUsers(users.filter((user) => user.id !== userId));
+    } catch (error) {
+      console.error("Error deleting user:", error);
+    }
   };
 
   const handleDeleteRequest = async (requestId, userId) => {
-    await deleteDoc(doc(db, "deletionRequests", requestId));
-    handleDeleteUser(userId);
-    setDeletionRequests(deletionRequests.filter((request) => request.id !== requestId));
+    try {
+      // Remove userEmail before deleting the request
+      const requestRef = doc(db, "deletionRequests", requestId);
+      await updateDoc(requestRef, { userEmail: "" });
+      await deleteDoc(requestRef);
+      await handleDeleteUser(userId);
+      
+      setDeletionRequests(deletionRequests.filter((request) => request.id !== requestId));
+    } catch (error) {
+      console.error("Error deleting request:", error);
+    }
   };
 
   const handleDeclineRequest = async (requestId) => {
     try {
-      // Update the status of the deletion request to "declined"
+      // Update the status of the deletion request to "declined" and remove userEmail
       const requestRef = doc(db, "deletionRequests", requestId);
       await updateDoc(requestRef, {
-        status: "declined"
+        status: "declined",
+        userEmail: ""
       });
       // Remove the declined request from the local state
       setDeletionRequests(deletionRequests.filter((request) => request.id !== requestId));
@@ -183,5 +204,7 @@ export default function Management() {
         </div>
       </Box>
     </Box>
+ 
+
   );
 }
