@@ -1,4 +1,6 @@
 import { useEffect, useState, useRef } from "react";
+import { TagCloud } from 'react-tagcloud'
+
 import {
   Checkbox,
   FormControl,
@@ -36,6 +38,7 @@ import CleaningServicesIcon from "@mui/icons-material/CleaningServices";
 
 // SERVICES:
 import { getFeeling } from "../services/SalesService";
+import { getTopWords } from "../services/SalesService";
 import { saveAs } from 'file-saver';
 
 const ITEM_HEIGHT = 48;
@@ -61,7 +64,9 @@ const Dashboard = () => {
     neutral: 0,
     negative: 0,
   });
+
   const [feelingAll, setFeelingAll] = useState(undefined);
+  const [topWordsData, setTopWordsData]= useState([]);
   const [chartType, setChartType] = useState("bar"); // Default chart type
   const [selectedRegions, setSelectedRegions] = useState([]);
   const [selectedStates, setSelectedStates] = useState([]);
@@ -165,7 +170,6 @@ const Dashboard = () => {
     "TO",
   ];
 
-
   function getAbbreviation(fullStateName) {
     const index = regioesDoBrasil.Todas.indexOf(fullStateName);
     if (index !== -1) {
@@ -177,7 +181,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     async function handleFeelingData() {
-      let feelingData;
+      let feelingData; 
 
       let regions = [];
       let states = [];
@@ -282,6 +286,37 @@ const Dashboard = () => {
     }
   };
 
+  useEffect(() => {
+    async function fetchDataTopWords() {
+      let regions = [];
+      let states = [];
+      let feeling = "";
+
+      if (selectedRegions.includes("Todas")) {
+        regions = [];
+      } else if (selectedRegions.length) {
+        regions = selectedRegions;
+      }
+	  
+	    if (!regions.length) {
+        states = selectedStates.map((state) => getAbbreviation(state));
+      }
+	  
+	    feeling = selectedSentiment;
+  
+      try {
+        const topWordsData = await getTopWords(states, regions, feeling);
+        setTopWordsData(topWordsData);
+        console.log('abacate');
+        console.log(topWordsData);
+      } catch (error) {
+        console.error("Error fetching top words:", error.message);
+      }
+    }
+
+    fetchDataTopWords();
+  }, [selectedRegions, selectedStates, selectedSentiment]);
+  
   return (
     <Box m="20px">
       {/* HEADER */}
@@ -621,6 +656,29 @@ const Dashboard = () => {
             Sales by period
           </Typography>
           <SalesBarChart filter={filter} />
+        </Box>
+
+        {/* Top Words */}
+        <Box
+          gridColumn="span 4"
+          gridRow="span 2"
+          backgroundColor={colors.primary[400]}
+          p="30px"
+          display="flex"
+          flexDirection="column"
+          // mt="25px"
+        >
+          <Typography variant="h5" fontWeight="600">
+            Top Words
+          </Typography>          
+                
+          <TagCloud
+              minSize={15}
+              maxSize={25}
+              tags={topWordsData}
+              //onClick={tag => alert(`'${tag.value}' was selected!`)}
+            />      
+             
         </Box>
       </Box>
 
