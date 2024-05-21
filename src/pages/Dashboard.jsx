@@ -1,4 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import { TagCloud } from 'react-tagcloud'
+
 import {
   Checkbox,
   FormControl,
@@ -12,6 +14,9 @@ import {
 
 import { Box, Button, Typography, useTheme, Stack } from "@mui/material";
 import { tokens } from "../theme";
+import domtoimage from 'dom-to-image-more';
+import { createDocxContent } from "../reports/Docx/DashboardReport";
+import { Packer } from 'docx';
 
 // COMPONENTS:
 import Header from "../components/Header";
@@ -33,8 +38,8 @@ import CleaningServicesIcon from "@mui/icons-material/CleaningServices";
 
 // SERVICES:
 import { getFeeling } from "../services/SalesService";
+import { getTopWords } from "../services/SalesService";
 import { saveAs } from 'file-saver';
-import { Document, Packer, Paragraph, TextRun } from 'docx';
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -59,9 +64,15 @@ const Dashboard = () => {
     neutral: 0,
     negative: 0,
   });
+
+  const [feelingAll, setFeelingAll] = useState(undefined);
+  const [topWordsData, setTopWordsData]= useState([]);
   const [chartType, setChartType] = useState("bar"); // Default chart type
   const [selectedRegions, setSelectedRegions] = useState([]);
   const [selectedStates, setSelectedStates] = useState([]);
+
+  const genderChartRef = useRef(null);
+  const sentimentByMonthRef = useRef(null);
 
   const handleClearFilters = () => {
     setSelectedRegions([]);
@@ -170,7 +181,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     async function handleFeelingData() {
-      let feelingData;
+      let feelingData; 
 
       let regions = [];
       let states = [];
@@ -208,6 +219,7 @@ const Dashboard = () => {
         });
 
         setFeelingData(finalFeelingData);
+        if (!feelingAll) setFeelingAll({...finalFeelingData})
         setFilter({ states, regions, feeling });
       } catch (error) {
         console.error("Error fetching feeling data:", error.message);
@@ -254,36 +266,57 @@ const Dashboard = () => {
 
   const [allRegionsSelected, setAllRegionsSelected] = useState(false);
 
-  const handleDownloadReport = () => {
-    const doc = new Document({
-      sections: [{
-        properties: {},
-        children: [
-          new Paragraph({
-            children: [
-              new TextRun("Ralatório HexAnalytics"),
-              new TextRun({
-                text: "Foo Bar",
-                bold: true,
-              }),
-              new TextRun({
-                text: "\tExemplos",
-                bold: true,
-              }),
-            ],
-          }),
-        ],
-      }]
-    });
+  const handleDownloadReport = async () => {
+    const genderChartBlob = await exportChartToPng(genderChartRef);
+    const sentimentByMonthChartBlob = await exportChartToPng(sentimentByMonthRef);
+
+    const doc = createDocxContent(feelingAll, feelingData, genderChartBlob, sentimentByMonthChartBlob)
 
     Packer.toBlob(doc).then(blob => {
       console.log(blob);
-      saveAs(blob, "relatorio.docx");
+      saveAs(blob, "Dashboard_Report.docx");
       console.log("Document created successfully");
     });
   }
-  
 
+  const exportChartToPng = async (myRef) => {
+    if (myRef.current) {
+      const blob = await domtoimage.toBlob(myRef.current);
+      return blob
+    }
+  };
+
+  useEffect(() => {
+    async function fetchDataTopWords() {
+      let regions = [];
+      let states = [];
+      let feeling = "";
+
+      if (selectedRegions.includes("Todas")) {
+        regions = [];
+      } else if (selectedRegions.length) {
+        regions = selectedRegions;
+      }
+	  
+	    if (!regions.length) {
+        states = selectedStates.map((state) => getAbbreviation(state));
+      }
+	  
+	    feeling = selectedSentiment;
+  
+      try {
+        const topWordsData = await getTopWords(states, regions, feeling);
+        setTopWordsData(topWordsData);
+        console.log('abacate');
+        console.log(topWordsData);
+      } catch (error) {
+        console.error("Error fetching top words:", error.message);
+      }
+    }
+
+    fetchDataTopWords();
+  }, [selectedRegions, selectedStates, selectedSentiment]);
+  
   return (
     <Box m="20px">
       {/* HEADER */}
@@ -469,11 +502,10 @@ const Dashboard = () => {
                 ? feelingData.positive / feelingData.total
                 : 0
             }
-            increase={`${
-              feelingData.total !== 0
+            increase={`${feelingData.total !== 0
                 ? ((feelingData.positive * 100) / feelingData.total).toFixed(2)
                 : 0
-            }%`}
+              }%`}
             icon={
               <SentimentVerySatisfiedIcon
                 sx={{ color: colors.greenAccent[500], fontSize: "26px" }}
@@ -497,11 +529,10 @@ const Dashboard = () => {
                 ? feelingData.neutral / feelingData.total
                 : 0
             }
-            increase={`${
-              feelingData.total !== 0
+            increase={`${feelingData.total !== 0
                 ? ((feelingData.neutral * 100) / feelingData.total).toFixed(2)
                 : 0
-            }%`}
+              }%`}
             icon={
               <SentimentNeutralIcon
                 sx={{ color: "#ffa927", fontSize: "26px" }}
@@ -525,11 +556,10 @@ const Dashboard = () => {
                 ? feelingData.negative / feelingData.total
                 : 0
             }
-            increase={`${
-              feelingData.total !== 0
+            increase={`${feelingData.total !== 0
                 ? ((feelingData.negative * 100) / feelingData.total).toFixed(2)
                 : 0
-            }%`}
+              }%`}
             icon={
               <SentimentVeryDissatisfiedIcon
                 sx={{ color: "#E0115F", fontSize: "26px" }}
@@ -540,13 +570,14 @@ const Dashboard = () => {
         {/* ROW 2 */}
         {/* REVIEW SENTIMENT BY MONTH */}
         <Box
+          ref={sentimentByMonthRef}
           gridColumn="span 8"
           gridRow="span 2"
           backgroundColor={colors.primary[400]}
           p="30px"
           display="flex"
           flexDirection="column"
-          // mt="25px"
+        // mt="25px"
         >
           <Typography variant="h5" fontWeight="600">
             Review sentiment by month
@@ -563,7 +594,7 @@ const Dashboard = () => {
           gridColumn="span 4"
           gridRow="span 2"
           backgroundColor={colors.primary[400]}
-          // mt="25px"
+        // mt="25px"
         >
           <Box
             mt="25px"
@@ -597,13 +628,14 @@ const Dashboard = () => {
         {/* ROW 3 */}
         {/*   GENDER */}
         <Box
+          ref={genderChartRef}
           gridColumn="span 4"
           gridRow="span 2"
           backgroundColor={colors.primary[400]}
           p="30px"
           display="flex"
           flexDirection="column"
-          // mt="25px"
+        // mt="25px"
         >
           <Typography variant="h5" fontWeight="600">
             Gender
@@ -618,12 +650,35 @@ const Dashboard = () => {
           p="30px"
           display="flex"
           flexDirection="column"
-          // mt="25px"
+        // mt="25px"
         >
           <Typography variant="h5" fontWeight="600">
             Sales by period
           </Typography>
           <SalesBarChart filter={filter} />
+        </Box>
+
+        {/* Top Words */}
+        <Box
+          gridColumn="span 4"
+          gridRow="span 2"
+          backgroundColor={colors.primary[400]}
+          p="30px"
+          display="flex"
+          flexDirection="column"
+          // mt="25px"
+        >
+          <Typography variant="h5" fontWeight="600">
+            Top Words
+          </Typography>          
+                
+          <TagCloud
+              minSize={15}
+              maxSize={25}
+              tags={topWordsData}
+              //onClick={tag => alert(`'${tag.value}' was selected!`)}
+            />      
+             
         </Box>
       </Box>
 
