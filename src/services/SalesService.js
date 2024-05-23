@@ -1,5 +1,6 @@
 // const API_URL = "http://3.140.192.18:8000"
-const API_URL = "http://127.0.0.1:5000"
+// const API_URL = "http://127.0.0.1:5000"
+const API_URL = "https://api6.nossoscursos.com.br/"
 const API_URL_PREFIX = "api"
 
 export async function getTopWords(states, regions, feeling) {
