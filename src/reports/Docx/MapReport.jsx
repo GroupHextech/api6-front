@@ -11,8 +11,8 @@ export const createDocxContent = (mapBlob, selectedFeeling, selectedRegion, sele
     // { text: "Total dos dados de vendas das lojas Americanas do ano de 2018.", hasData: true },
     // { text: "Total dos dados da pesquisa:" },
     { text: "Filtros selecionados: ", hasData: true },
-    { text: "Gráficos demonstrativos" },
-    { text: "Mapa:", imageBlob: mapBlob },
+    { text: "Filtragem por sentimentos:" },
+    { text: "Mapa do Brasil:", imageBlob: mapBlob },
   ]
 
   const bullets = [
@@ -93,7 +93,7 @@ export const createDocxContent = (mapBlob, selectedFeeling, selectedRegion, sele
           data: myBlobData,
           transformation: {
             width: 525,
-            height: 350
+            height: 450
           }
         })
       ]
