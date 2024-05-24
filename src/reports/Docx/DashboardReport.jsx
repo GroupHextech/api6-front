@@ -13,8 +13,8 @@ export const createDocxContent = (feelingAll, feelingData, genderChartBlob, sent
     // { text: "Selecionado os estados ou região: São Paulo e Acre.", feeling: feelingData },
     { text: "Total definido pelo filtro:", feeling: feelingData },
     { text: "Gráficos demonstrativos" },
-    { text: "Gênero:", imageBlob: genderChartBlob },
-    { text: "Quantidade de venda entre Jan e Mai:", imageBlob: sentimentByMonthRef }
+    { text: "Gender:", imageBlob: genderChartBlob },
+    { text: "Review sentiment by month:", imageBlob: sentimentByMonthRef }
   ]
 
   const bullets = [
@@ -94,7 +94,7 @@ export const createDocxContent = (feelingAll, feelingData, genderChartBlob, sent
           type: "jpg",
           data: myBlobData,
           transformation: {
-            width: 350,
+            width: 300,
             height: 200
           }
         })
