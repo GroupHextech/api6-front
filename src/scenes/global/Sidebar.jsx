@@ -1,4 +1,4 @@
-import { useState, useContext, useEffect } from "react";
+import { useState, useContext } from "react";
 import { ProSidebar, Menu, MenuItem } from "react-pro-sidebar";
 import { Box, IconButton, Typography, useTheme } from "@mui/material";
 import { Link } from "react-router-dom";
@@ -7,6 +7,7 @@ import { tokens } from "../../theme";
 import { AuthContext } from "../../services/authContext";
 import { ref, getDownloadURL, uploadBytesResumable } from "firebase/storage"; // Importe as funções necessárias para fazer upload de arquivos
 import { storage, firestore } from "../../services/firebaseConfig"; // Importe a instância do Firebase Storage e do Firestore
+import { useEffect } from "react";
 import { doc, updateDoc } from "@firebase/firestore";
 
 // ICONS:
@@ -15,6 +16,10 @@ import DashboardOutlinedIcon from "@mui/icons-material/DashboardOutlined";
 import MapOutlinedIcon from "@mui/icons-material/MapOutlined";
 import MenuOutlinedIcon from "@mui/icons-material/MenuOutlined";
 import HandymanOutlinedIcon from '@mui/icons-material/HandymanOutlined';
+
+
+
+
 
 
 const Item = ({ title, to, icon, selected, setSelected }) => {
@@ -40,7 +45,7 @@ const Sidebar = () => {
   const colors = tokens(theme.palette.mode);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [selected, setSelected] = useState("Home");
-  const { userData, currentUser, setUserData } = useContext(AuthContext);
+  const { userData , currentUser } = useContext(AuthContext);
   const [userName, setUserName] = useState("");
   const [userRole, setUserRole] = useState("");
   const [userFoto, setUserFoto] = useState("");
@@ -87,8 +92,6 @@ const Sidebar = () => {
         });
       }
     );
-    // Atualiza o estado do usuário após o upload
-    updateUserData({ ...userData, foto: downloadURL });
   };
 
   return (
@@ -207,7 +210,7 @@ const Sidebar = () => {
           {userRole === "ADMIN" && ( 
             <Item
               title="Management"
-              to="/manege"
+              to="/map"
               icon={<HandymanOutlinedIcon />}
               selected={selected}
               setSelected={setSelected}
