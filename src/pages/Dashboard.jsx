@@ -1,4 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import { TagCloud } from 'react-tagcloud'
+
 import {
   Checkbox,
   FormControl,
@@ -12,6 +14,9 @@ import {
 
 import { Box, Button, Typography, useTheme, Stack } from "@mui/material";
 import { tokens } from "../theme";
+import domtoimage from 'dom-to-image-more';
+import { createDocxContent } from "../reports/Docx/DashboardReport";
+import { Packer } from 'docx';
 
 // COMPONENTS:
 import Header from "../components/Header";
@@ -21,17 +26,20 @@ import StatBox from "../components/StatBox";
 import GenderPieChart from "../components/charts/GenderPieChart";
 import SalesBarChart from "../components/charts/SalesBarChart";
 import MonthlyPeriodChart from "../components/charts/MonthlyPeriodChart";
+import CategoriesPieAndBarChart from "../components/charts/CategoriesPieAndBarChart";
 
 // ICONS:
 import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
 import ReviewsOutlinedIcon from "@mui/icons-material/ReviewsOutlined";
-import EmojiEmotionsOutlinedIcon from "@mui/icons-material/EmojiEmotionsOutlined";
-import SentimentNeutralOutlinedIcon from "@mui/icons-material/SentimentNeutralOutlined";
-import SentimentDissatisfiedOutlinedIcon from "@mui/icons-material/SentimentDissatisfiedOutlined";
-import CategoriesPieAndBarChart from "../components/charts/CategoriesPieAndBarChart";
+import SentimentVerySatisfiedIcon from "@mui/icons-material/SentimentVerySatisfied";
+import SentimentNeutralIcon from "@mui/icons-material/SentimentNeutral";
+import SentimentVeryDissatisfiedIcon from "@mui/icons-material/SentimentVeryDissatisfied";
 import CleaningServicesIcon from "@mui/icons-material/CleaningServices";
-import { SystemUpdateRounded } from "@mui/icons-material";
+
+// SERVICES:
 import { getFeeling } from "../services/SalesService";
+import { getTopWords } from "../services/SalesService";
+import { saveAs } from 'file-saver';
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -49,21 +57,27 @@ const Dashboard = () => {
   const colors = tokens(theme.palette.mode);
 
   const [filter, setFilter] = useState({});
-  const [selectedFeeling, setSelectedFeeling] = useState("");
+  const [selectedSentiment, setSelectedSentiment] = useState("");
   const [feelingData, setFeelingData] = useState({
     total: 0,
     positive: 0,
     neutral: 0,
     negative: 0,
   });
-  const [chartType, setChartType] = useState("pie"); // Default chart type
-  const [selectedRegions, setSelectedRegions] = useState(["Todas"]);
-  const [selectedStates, setSelectedStates] = useState(["São Paulo"]);
+
+  const [feelingAll, setFeelingAll] = useState(undefined);
+  const [topWordsData, setTopWordsData]= useState([]);
+  const [chartType, setChartType] = useState("bar"); // Default chart type
+  const [selectedRegions, setSelectedRegions] = useState([]);
+  const [selectedStates, setSelectedStates] = useState([]);
+
+  const genderChartRef = useRef(null);
+  const sentimentByMonthRef = useRef(null);
 
   const handleClearFilters = () => {
     setSelectedRegions([]);
     setSelectedStates([]);
-    setSelectedFeeling("");
+    setSelectedSentiment("");
   };
 
   const regioesDoBrasil = {
@@ -167,7 +181,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     async function handleFeelingData() {
-      let feelingData;
+      let feelingData; 
 
       let regions = [];
       let states = [];
@@ -183,7 +197,7 @@ const Dashboard = () => {
         states = selectedStates.map((state) => getAbbreviation(state));
       }
 
-      feeling = selectedFeeling;
+      feeling = selectedSentiment;
 
       try {
         if (states.length || regions.length) {
@@ -205,6 +219,7 @@ const Dashboard = () => {
         });
 
         setFeelingData(finalFeelingData);
+        if (!feelingAll) setFeelingAll({...finalFeelingData})
         setFilter({ states, regions, feeling });
       } catch (error) {
         console.error("Error fetching feeling data:", error.message);
@@ -212,7 +227,7 @@ const Dashboard = () => {
     }
 
     handleFeelingData();
-  }, [selectedRegions, selectedStates, selectedFeeling]);
+  }, [selectedRegions, selectedStates, selectedSentiment]);
 
   const handleChangeRegion = (event, child) => {
     let selectedOptions = event.target.value;
@@ -246,12 +261,62 @@ const Dashboard = () => {
   };
 
   const handleFeelingClick = (event) => {
-    setSelectedFeeling(event.target.value);
-    console.log("Feeling clicked:", event.target.value);
+    setSelectedSentiment(event.target.value);
   };
 
-  const [allRegionsSelected, setAllRegionsSelected] = useState(true);
+  const [allRegionsSelected, setAllRegionsSelected] = useState(false);
 
+  const handleDownloadReport = async () => {
+    const genderChartBlob = await exportChartToPng(genderChartRef);
+    const sentimentByMonthChartBlob = await exportChartToPng(sentimentByMonthRef);
+
+    const doc = createDocxContent(feelingAll, feelingData, genderChartBlob, sentimentByMonthChartBlob)
+
+    Packer.toBlob(doc).then(blob => {
+      console.log(blob);
+      saveAs(blob, "Dashboard_Report.docx");
+      console.log("Document created successfully");
+    });
+  }
+
+  const exportChartToPng = async (myRef) => {
+    if (myRef.current) {
+      const blob = await domtoimage.toBlob(myRef.current);
+      return blob
+    }
+  };
+
+  useEffect(() => {
+    async function fetchDataTopWords() {
+      let regions = [];
+      let states = [];
+      let feeling = "";
+
+      if (selectedRegions.includes("Todas")) {
+        regions = [];
+      } else if (selectedRegions.length) {
+        regions = selectedRegions;
+      }
+	  
+	    if (!regions.length) {
+        states = selectedStates.map((state) => getAbbreviation(state));
+      }
+	  
+	    feeling = selectedSentiment;
+  
+      try {
+        const topWordsData = await getTopWords(states, regions, feeling);
+        setTopWordsData(topWordsData);
+        console.log('abacate');
+        console.log(topWordsData);
+      } catch (error) {
+        console.error("Error fetching top words:", error.message);
+      }
+    }
+
+    fetchDataTopWords();
+  }, [selectedRegions, selectedStates, selectedSentiment]);
+  
   return (
     <Box m="20px">
       {/* HEADER */}
@@ -266,6 +331,7 @@ const Dashboard = () => {
               fontWeight: "bold",
               padding: "10px 20px",
             }}
+            onClick={handleDownloadReport}
           >
             <DownloadOutlinedIcon />
           </Button>
@@ -279,13 +345,13 @@ const Dashboard = () => {
             onClick={handleFeelingClick}
             style={{
               backgroundColor:
-                selectedFeeling === "Positive"
+                selectedSentiment === "Positive"
                   ? colors.grey[550]
                   : colors.primary[400],
             }}
             endIcon={
-              <EmojiEmotionsOutlinedIcon
-                style={{ color: colors.greenAccent[600] }}
+              <SentimentVerySatisfiedIcon
+                style={{ color: colors.greenAccent[500] }}
               />
             }
             sx={{
@@ -300,13 +366,11 @@ const Dashboard = () => {
             onClick={handleFeelingClick}
             style={{
               backgroundColor:
-                selectedFeeling === "Neutral"
+                selectedSentiment === "Neutral"
                   ? colors.grey[550]
                   : colors.primary[400],
             }}
-            endIcon={
-              <SentimentNeutralOutlinedIcon style={{ color: "#ffa927" }} />
-            }
+            endIcon={<SentimentNeutralIcon style={{ color: "#ffa927" }} />}
             sx={{
               padding: "10px 20px",
             }}
@@ -319,12 +383,12 @@ const Dashboard = () => {
             onClick={handleFeelingClick}
             style={{
               backgroundColor:
-                selectedFeeling === "Negative"
+                selectedSentiment === "Negative"
                   ? colors.grey[550]
                   : colors.primary[400],
             }}
             endIcon={
-              <SentimentDissatisfiedOutlinedIcon style={{ color: "#E0115F" }} />
+              <SentimentVeryDissatisfiedIcon style={{ color: "#E0115F" }} />
             }
             sx={{
               padding: "10px 20px",
@@ -390,7 +454,7 @@ const Dashboard = () => {
           }}
           onClick={handleClearFilters}
         >
-          <CleaningServicesIcon style={{ color: "#70d8bd" }} />
+          <CleaningServicesIcon style={{ color: colors.greenAccent[500] }} />
         </Button>
       </Box>
 
@@ -417,7 +481,7 @@ const Dashboard = () => {
             increase="100%"
             icon={
               <ReviewsOutlinedIcon
-                sx={{ color: colors.greenAccent[600], fontSize: "26px" }}
+                sx={{ color: colors.greenAccent[500], fontSize: "26px" }}
               />
             }
           />
@@ -438,14 +502,13 @@ const Dashboard = () => {
                 ? feelingData.positive / feelingData.total
                 : 0
             }
-            increase={`${
-              feelingData.total !== 0
+            increase={`${feelingData.total !== 0
                 ? ((feelingData.positive * 100) / feelingData.total).toFixed(2)
                 : 0
-            }%`}
+              }%`}
             icon={
-              <EmojiEmotionsOutlinedIcon
-                sx={{ color: colors.greenAccent[600], fontSize: "26px" }}
+              <SentimentVerySatisfiedIcon
+                sx={{ color: colors.greenAccent[500], fontSize: "26px" }}
               />
             }
           />
@@ -466,13 +529,12 @@ const Dashboard = () => {
                 ? feelingData.neutral / feelingData.total
                 : 0
             }
-            increase={`${
-              feelingData.total !== 0
+            increase={`${feelingData.total !== 0
                 ? ((feelingData.neutral * 100) / feelingData.total).toFixed(2)
                 : 0
-            }%`}
+              }%`}
             icon={
-              <SentimentNeutralOutlinedIcon
+              <SentimentNeutralIcon
                 sx={{ color: "#ffa927", fontSize: "26px" }}
               />
             }
@@ -494,57 +556,45 @@ const Dashboard = () => {
                 ? feelingData.negative / feelingData.total
                 : 0
             }
-            increase={`${
-              feelingData.total !== 0
+            increase={`${feelingData.total !== 0
                 ? ((feelingData.negative * 100) / feelingData.total).toFixed(2)
                 : 0
-            }%`}
+              }%`}
             icon={
-              <SentimentDissatisfiedOutlinedIcon
+              <SentimentVeryDissatisfiedIcon
                 sx={{ color: "#E0115F", fontSize: "26px" }}
               />
             }
           />
         </Box>
         {/* ROW 2 */}
-        {/*   -- INSERT ROW 2 CONTENT HERE -- */}
-        {/* ROW 3 */}
-        {/*   GENDER */}
+        {/* REVIEW SENTIMENT BY MONTH */}
         <Box
-          gridColumn="span 4"
+          ref={sentimentByMonthRef}
+          gridColumn="span 8"
           gridRow="span 2"
           backgroundColor={colors.primary[400]}
           p="30px"
           display="flex"
           flexDirection="column"
-          // mt="25px"
+        // mt="25px"
         >
           <Typography variant="h5" fontWeight="600">
-            Gender
+            Review sentiment by month
           </Typography>
-          <GenderPieChart filter={filter} />
-        </Box>
-        {/* SALES BY PERIOD */}
-        <Box
-          gridColumn="span 4"
-          gridRow="span 2"
-          backgroundColor={colors.primary[400]}
-          p="30px"
-          display="flex"
-          flexDirection="column"
-          // mt="25px"
-        >
-          <Typography variant="h5" fontWeight="600">
-            Sales by period
-          </Typography>
-          <SalesBarChart filter={filter} />
+          <Box height="250px" m="0 0 0 0">
+            <MonthlyPeriodChart
+              filter={filter}
+              selectedSentiment={selectedSentiment}
+            />
+          </Box>
         </Box>
         {/*   REVIEWS BY CATEGORY  */}
         <Box
           gridColumn="span 4"
           gridRow="span 2"
           backgroundColor={colors.primary[400]}
-          // mt="25px"
+        // mt="25px"
         >
           <Box
             mt="25px"
@@ -563,7 +613,7 @@ const Dashboard = () => {
                 variant="contained"
                 onClick={() =>
                   setChartType((prevChartType) =>
-                    prevChartType === "pie" ? "bar" : "pie"
+                    prevChartType === "bar" ? "pie" : "bar"
                   )
                 } // Use a seta para chamar a função
               >
@@ -575,7 +625,40 @@ const Dashboard = () => {
             <CategoriesPieAndBarChart chartType={chartType} filter={filter} />
           </Box>
         </Box>
-        {/* MONTHLY PERIOD CHART */}
+        {/* ROW 3 */}
+        {/*   GENDER */}
+        <Box
+          ref={genderChartRef}
+          gridColumn="span 4"
+          gridRow="span 2"
+          backgroundColor={colors.primary[400]}
+          p="30px"
+          display="flex"
+          flexDirection="column"
+        // mt="25px"
+        >
+          <Typography variant="h5" fontWeight="600">
+            Gender
+          </Typography>
+          <GenderPieChart filter={filter} />
+        </Box>
+        {/* SALES BY PERIOD */}
+        <Box
+          gridColumn="span 4"
+          gridRow="span 2"
+          backgroundColor={colors.primary[400]}
+          p="30px"
+          display="flex"
+          flexDirection="column"
+        // mt="25px"
+        >
+          <Typography variant="h5" fontWeight="600">
+            Sales by period
+          </Typography>
+          <SalesBarChart filter={filter} />
+        </Box>
+
+        {/* Top Words */}
         <Box
           gridColumn="span 4"
           gridRow="span 2"
@@ -586,11 +669,16 @@ const Dashboard = () => {
           // mt="25px"
         >
           <Typography variant="h5" fontWeight="600">
-            Number of sales per month
-          </Typography>
-          <Box height="250px" m="0 0 0 0">
-            <MonthlyPeriodChart filter={filter} />
-          </Box>
+            Top Words
+          </Typography>          
+                
+          <TagCloud
+              minSize={15}
+              maxSize={25}
+              tags={topWordsData}
+              //onClick={tag => alert(`'${tag.value}' was selected!`)}
+            />      
+             
         </Box>
       </Box>
 

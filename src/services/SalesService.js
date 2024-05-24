@@ -1,6 +1,32 @@
 // const API_URL = "http://3.140.192.18:8000"
-const API_URL = "http://127.0.0.1:5000"
+// const API_URL = "http://127.0.0.1:5000"
+const API_URL = "https://api6.nossoscursos.com.br/"
 const API_URL_PREFIX = "api"
+
+export async function getTopWords(states, regions, feeling) {
+  try {     
+    let params = getFilterParams(states, regions, feeling);
+ 
+    const response = await fetch(`${API_URL}/${API_URL_PREFIX}/word-frequency` + params);
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch top words');
+    }
+    const data = await response.json();
+
+    const formattedData = Object.keys(data).map(key => ({
+      value: key,
+      count: data[key]
+    }));
+    
+    return formattedData;
+
+  } catch (error) {
+    throw new Error(error.message);
+  }
+}
+
+
 
 export async function getGender(states, regions, feeling) {
   try {
@@ -83,6 +109,9 @@ export async function getFeelingByMonth(states, regions, feeling) {
       throw new Error('Failed to fetch feeling data');
     }
     const data = await response.json();
+
+    console.log("DATA: ", data);
+
     return data.list;
   } catch (error) {
     throw new Error(error.message);

@@ -13,11 +13,9 @@ import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import Typography from "@mui/material/Typography";
 import Container from "@mui/material/Container";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
-import { useSignInWithEmailAndPassword } from "react-firebase-hooks/auth";
-import { auth, firestore } from "../../services/firebaseConfig";
-import { AuthContext } from "../../services/authContext";
 import { useNavigate } from "react-router-dom";
-import { collection, doc, getDoc } from "firebase/firestore"; // Importe os métodos necessários do Firestore
+import { AuthContext } from "../../services/authContext";
+import { login } from "../../services/authService";
 
 function LoadingAnimation() {
   return (
@@ -60,41 +58,33 @@ const defaultTheme = createTheme();
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const { setAuthenticated, setUserData } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  const [signInWithEmailAndPassword, user, loading, error] =
-    useSignInWithEmailAndPassword(auth);
-
   const handleSignIn = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setError(null);
+
     try {
-      const userCredential = await signInWithEmailAndPassword(email, password);
-      const user = userCredential.user;
-      const uid = user.uid;
-
-      const userCollectionRef = collection(firestore, "users");
-      const userRef = doc(userCollectionRef, uid);
-      const userSnapshot = await getDoc(userRef);
-
-      if (userSnapshot.exists()) {
-        const userData = userSnapshot.data();
-        console.log("Dados do usuário:", userData);
-        setUserData(userData);
-        setAuthenticated(true); // Definir autenticação como verdadeira
-        navigate("/"); // Navegar para a página inicial
-      } else {
-        console.log("Não foram encontrados dados do usuário no Firestore.");
-      }
+      const { user, userData } = await login(email, password);
+      setUserData(userData);
+      setAuthenticated(true);
+      navigate("/");
     } catch (error) {
       console.error("Erro ao fazer login:", error);
+      setError(error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleSubmit = (event) => {
-    event.preventDefault();
-    const data = new FormData(event.currentTarget);
-  };
+  // const handleSubmit = (event) => {
+  //   event.preventDefault();
+  //   const data = new FormData(event.currentTarget);
+  // };
 
   if (loading) {
     return <LoadingAnimation />;
@@ -187,7 +177,7 @@ export default function Login() {
                       <Box
                         component="form"
                         noValidate
-                        onSubmit={handleSubmit}
+                        onSubmit={handleSignIn}
                         sx={{ mt: 3 }}
                       >
                         <Grid container spacing={2}>
