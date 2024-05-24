@@ -110,7 +110,7 @@ export default function Chart({filter}) {
         padding={0.3}
         valueScale={{ type: "linear" }}
         indexScale={{ type: "band", round: true }}
-        colors={{ scheme: 'category10' }}
+        colors={{ scheme: "nivo" }}
         enableLabel={false}
         enableTotals={true}
         labelSkipWidth={12}

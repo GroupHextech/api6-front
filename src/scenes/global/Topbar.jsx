@@ -11,7 +11,6 @@ import SearchIcon from "@mui/icons-material/Search";
 import LoginOutlinedIcon from '@mui/icons-material/LoginOutlined';
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../services/authContext";
-import { getAuth, signOut } from "firebase/auth";
 
 
 
@@ -24,16 +23,11 @@ const Topbar = () => {
 
   const navigate = useNavigate();
 
-  const logout = () => {
-    const auth = getAuth();
-    signOut(auth).then(() => {
-      setAuthenticated(false);
-      setUserData(null);
-      navigate("/login");
-    }).catch((error) => {
-      console.error("Erro ao sair:", error);
-    });
-  };
+  const logout = () =>{
+    setAuthenticated(false);
+    setUserData("");
+    navigate("/login");
+  }
 
   const dataNavigation = () => {
     navigate("/userData")
