@@ -10,7 +10,7 @@ import {
 import { tokens } from "../theme";
 import DeleteIcon from "@mui/icons-material/Delete";
 import BlockIcon from "@mui/icons-material/Block";
-import { collection, getDocs, deleteDoc, doc, updateDoc } from "firebase/firestore";
+import { collection, getDocs, deleteDoc, doc, updateDoc, addDoc, Timestamp } from "firebase/firestore";
 import { getFirestore } from "firebase/firestore";
 import Header from "../components/Header";
 import { getAuth, deleteUser } from "firebase/auth";
@@ -33,7 +33,7 @@ export default function Management() {
       const usersList = usersSnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
-      }));
+      })).filter(user => user.role !== "ADMIN"); // Filter out ADMIN users
       setUsers(usersList);
 
       // Fetch deletion requests and filter out declined requests
@@ -54,12 +54,14 @@ export default function Management() {
 
   const handleDeleteUser = async (userId) => {
     try {
-      // Delete the user from Firebase Authentication
-      await deleteUser(auth.currentUser);
-
       // Delete the user from Firestore
       await deleteDoc(doc(db, "users", userId));
 
+      // Add user to blacklist with timestamp
+      const blacklistRef = collection(db, "blacklist");
+      await addDoc(blacklistRef, { userId, timestamp: Timestamp.now() });
+
+      // Update local state
       setUsers(users.filter((user) => user.id !== userId));
     } catch (error) {
       console.error("Error deleting user:", error);
@@ -204,7 +206,5 @@ export default function Management() {
         </div>
       </Box>
     </Box>
- 
-
   );
 }

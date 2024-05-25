@@ -39,7 +39,7 @@ export default function AppRoutes() {
                   <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/map" element={<Map />} />
                   <Route path="/userData" element={<UserData />} />
-                  <Route path="/manage" element={<Manegement />} />
+                  <Route path="/manege" element={<Manegement />} />
                 </Route>
                 {/* Adicione outras rotas aqui */}
               </Routes>
