@@ -96,7 +96,6 @@ const CategoriesPieAndBarChart = ({ chartType, filter }) => {
             padAngle={0.7}
             cornerRadius={3}
             activeOuterRadiusOffset={8}
-            colors={{ scheme: 'category10' }}
             borderWidth={1}
             borderColor={{
               from: "color",
@@ -232,7 +231,7 @@ const CategoriesPieAndBarChart = ({ chartType, filter }) => {
             margin={{ top: 20, right: 30, bottom: 30, left: 150 }}
             padding={0.3}
             layout="horizontal"
-            colors={{ scheme: 'category10' }}
+            colors={{ scheme: "nivo" }}
             colorBy="indexValue"
             defs={[
               {
