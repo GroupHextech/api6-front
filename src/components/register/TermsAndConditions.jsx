@@ -1,10 +1,10 @@
 import * as React from "react";
 import { Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from "@mui/material";
 
-export default function TermsAndConditions({ open, handleClose, handleAgree }) {
+export default function TermsAndConditions({ open, onAgree, onClose }) {
 
   return (
-    <Dialog open={open} onClose={handleClose} scroll='body'>
+    <Dialog open={open} onClose={onClose} scroll='body'>
       <DialogTitle>Terms of Use</DialogTitle>
       <DialogContent dividers>
       <DialogContentText
@@ -22,8 +22,8 @@ Praesent commodo cursus magna, vel scelerisque nisl consectetur et.`,
           </DialogContentText>
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleClose}>Cancel</Button>
-        <Button onClick={handleAgree}>Agree</Button>
+        <Button onClick={onClose}>Cancel</Button>
+        <Button onClick={onAgree}>Agree</Button>
       </DialogActions>
     </Dialog>
   );

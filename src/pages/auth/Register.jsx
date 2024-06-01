@@ -19,10 +19,9 @@ import { doc, setDoc, addDoc, collection } from "@firebase/firestore";
 import { useNavigate } from "react-router-dom";
 import { serverTimestamp } from "@firebase/firestore";
 
+import QRCodeService from "../../services/QRCodeService";
 
 import TermsAndConditions from "../../components/register/TermsAndConditions";
-import { Navigate } from "react-router-dom";
-import { Image } from "@mui/icons-material";
 
 function Copyright(props) {
   return (
@@ -46,16 +45,21 @@ const defaultTheme = createTheme();
 
 export default function Register() {
   const [email, setEmail] = useState("");
-  const [phone , setPhone] = useState("")
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [confirmationPassword, setConfirmationPassword] = useState("");
   const [name, setName] = useState("");
   const [termOfEmail, setTermOfEmail] = useState(true);
   const [termOfSms, setTermOfSms] = useState(true);
   const [showTermsAlert, setShowTermsAlert] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [showSecondForm, setShowSecondForm] = useState(false);
   const [jobTitle, setJobTitle] = useState("");
   const [department, setDepartment] = useState("");
   const [employId, setEmployId] = useState("");
+
+  const [token, setToken] = useState("");
+  const [qrCode, setQRCode] = useState("");
 
   const navigate = useNavigate();
 
@@ -66,11 +70,10 @@ export default function Register() {
     return <p>Carregando...</p>;
   }
 
-  //nome, email, cargo, departamento, registro 
   const userCollectionRef = collection(firestore, "users");
 
   async function createUser(uid) {
-    const userRef = doc(userCollectionRef, uid); // Referência ao documento usando o uid como id
+    const userRef = doc(userCollectionRef, uid);
     try {
       await setDoc(userRef, {
         useTerm: true,
@@ -83,8 +86,8 @@ export default function Register() {
         termOfEmail,
         termOfSms,
         role: "USER",
-        foto:"../../assets/user.png",
-        createdAt: serverTimestamp(), 
+        foto: "../../assets/user.png",
+        createdAt: serverTimestamp(),
       });
       console.log("User created successfully!");
     } catch (error) {
@@ -101,41 +104,46 @@ export default function Register() {
     setShowTermsAlert(true);
   };
 
-  const handleCheckboxEmailChange = (event) => {
-    setTermOfEmail(event.target.checked);
-  };
-  const handleCheckboxSmsChange = (event) => {
-    setTermOfSms(event.target.checked); 
+  const handleAgreeTerms = () => {
+    setTermsAccepted(true);
+    setShowTermsAlert(false);
   };
 
-const handleAgreeTerms = (e) => {
-  e.preventDefault();
-  if (password.length < 6) {
-    alert("The password must have at least 6 characters.");
-    return;
-  }
-  if (password !== confirmationPassword) {
-    alert("Passwords do not match. Please enter matching passwords in both fields.");
-    return;
-  }
-  if (!email.endsWith('@hextech.com') && !email.endsWith('@imagem.com') && !email.endsWith('@gmail.com')) {
-    alert("Please enter a valid business email");
-    return;
-  }
+  const handleNextClick = async () => {
+    setShowSecondForm(true);
+    try {
+      const generatedQRCode = await QRCodeService.generateQRCode(email);
+      if (generatedQRCode.startsWith("data:image/png;base64,")) {
+        setQRCode(generatedQRCode);
+      } else {
+        console.error("Error generating QR code: Invalid format");
+      }
+    } catch (error) {
+      console.error("Error generating QR code:", error);
+    }
+  };
 
-  setShowTermsAlert(false);
-  createUserWithEmailAndPassword(email, password)
-    .then((userCredential) => {
-      const user = userCredential.user;
-      const userUid = user.uid;
-      createUser(userUid);
-      navigate("/");
-    })
-    .catch((error) => {
-      console.error("Error creating user:", error);
-    });
-};
-
+  const handleVerifyToken = async (token) => {
+    try {
+      const verificationResult = await QRCodeService.verifyToken(email, token);
+      if (verificationResult === "Verified") {
+        createUserWithEmailAndPassword(email, password)
+          .then((userCredential) => {
+            const user = userCredential.user;
+            const userUid = user.uid;
+            createUser(userUid);
+            navigate("/");
+          })
+          .catch((error) => {
+            console.error("Error creating user:", error);
+          });
+      } else {
+        alert("Invalid token. Please enter a valid token.");
+      }
+    } catch (error) {
+      console.error("Error verifying Google Authenticator code:", error);
+    }
+  };
 
   return (
     <ThemeProvider theme={defaultTheme}>
@@ -145,9 +153,8 @@ const handleAgreeTerms = (e) => {
           item
           xs={12}
           sx={{
-            height: { md: "50vh", sm: "33vh", xs: "33vh" }, // Gradient background height
-            background:
-              "linear-gradient(to right, rgba(0,0,0,1) 25%, rgba(0,0,255,0.5) 100%)",
+            height: { md: "50vh", sm: "33vh", xs: "33vh" },
+            background: "linear-gradient(to right, rgba(0,0,0,1) 25%, rgba(0,0,255,0.5) 100%)",
           }}
         >
           <Grid container sx={{ height: "50%" }}>
@@ -161,7 +168,7 @@ const handleAgreeTerms = (e) => {
                 alignItems: "center",
                 justifyContent: "center",
                 padding: "20px",
-                color: "white", // Text color over gradient
+                color: "white",
                 maxHeight: "50vh",
               }}
             >
@@ -181,10 +188,9 @@ const handleAgreeTerms = (e) => {
                 flexDirection: "column",
                 alignItems: "center",
                 justifyContent: "center",
-                backgroundColor: "transparent", // Background for login form
+                backgroundColor: "transparent",
               }}
             >
-              {/* Register form content here */}
               <Box
                 sx={{
                   margin: "auto",
@@ -206,7 +212,7 @@ const handleAgreeTerms = (e) => {
                     sx={{
                       position: "relative",
                       width: "100%",
-                      maxWidth: "800px", // Defina a largura máxima do modal aqui
+                      maxWidth: "800px",
                       padding: "20px",
                       backgroundColor: "#fff",
                       border: "1px solid rgba(0, 0, 0, 0.2)",
@@ -214,167 +220,210 @@ const handleAgreeTerms = (e) => {
                       borderRadius: "10px",
                     }}
                   >
-                    <Box>
-                      <div style={{width:"100%", justifyContent:"center", display:"flex"}}>
-                        <img src="../../assets/dino-icon.svg" width={"80px"} />{" "}
-                      </div>
-                      <Typography component="h1" variant="h5" sx={{justifyContent:"center", display:"flex"}}>
-                        Create Account
-                      </Typography>
-                      <Box
-                        component="form"
-                        noValidate
-                        onSubmit={handleSubmit}
-                        sx={{ mt: 3 }}
-                      >
-                      
-                        <Grid container spacing={1}>
-                          <Grid item xs={8}>
-                            <TextField
-                              required
-                              fullWidth
-                              id="name"
-                              label="Name"
-                              name="name"
-                              autoComplete="name"
-                              onChange={(e) => setName(e.target.value)}
-                            />
-                            
-                          </Grid>
-
-                          <Grid item xs={4}>
-                            <TextField
-                              required
-                              fullWidth
-                              id="employId"
-                              label="Registration Number"
-                              name="employId"
-                              autoComplete="employId"
-                              onChange={(e) => setEmployId(e.target.value)}
-                            />
-                            
-                          </Grid>
-
-                          <Grid item xs={12} sm={6}>
-                          <TextField
-                              required
-                              fullWidth
-                              id="department"
-                              label="Department"
-                              name="department"
-                              onChange={(e) => setDepartment(e.target.value)}
-                            />
-                          </Grid>
-
-                          <Grid item xs={12} sm={6}>
-                            <TextField  
-                              required                   
-                              fullWidth
-                              id="jobTitle"
-                              label="Job Title"
-                              name="job"
-                              onChange={(e) => setJobTitle(e.target.value)}
-                            />
-                          </Grid>
-
-                          <Grid item xs={12} sm={6}>
-                          <TextField
-                              required
-                              fullWidth
-                              id="email"
-                              label="Email Address"
-                              name="email"
-                              autoComplete="email"
-                              onChange={(e) => setEmail(e.target.value)}
-                            />
-                          </Grid>
-                          <Grid item xs={12} sm={6}>
-                            <TextField                     
-                              fullWidth
-                              id="phone"
-                              label="Phone Number"
-                              name="phone"
-                              autoComplete="phone"
-                              onChange={(e) => setPhone(e.target.value)}
-                            />
-                          </Grid>
-                          <Grid item xs={6}>
-                            <TextField
-                              required
-                              fullWidth
-                              name="password"
-                              label="Password"
-                              type="password"
-                              id="password"
-                              autoComplete="new-password"
-                              onChange={(e) => setPassword(e.target.value)}
-                            />
-                          </Grid>
-                          <Grid item xs={6}>
-                            <TextField
-                              required
-                              fullWidth
-                              name="Confirm"
-                              label="Confirm Password"
-                              type="password"
-                              id="confirmPassword"
-                              autoComplete="new-password"
-                              onChange={(e) => setConfirmationPassword(e.target.value)}
-
-                            />
-                          </Grid>
-                          <Grid item xs={12}>
-                            <FormControlLabel
-                              control={
-                                <Checkbox
-                                  value="allowExtraEmails"
-                                  color="primary"
-                                  checked={termOfEmail}
-                                  onChange={handleCheckboxEmailChange}
-                                />
-                              }
-                              label="I want to receive inspiration, marketing promotions and updates via email."
-                            />
-                          </Grid>
-                          <Grid item xs={12}>
-                            <FormControlLabel
-                              control={
-                                <Checkbox
-                                  value="allowExtraSms"
-                                  color="primary"
-                                  checked={termOfSms}
-                                  onChange={handleCheckboxSmsChange}
-                                />
-                              }
-                              label="I want to receive updates via SMS."
-                            />
-                          </Grid>
-                        </Grid>
-                        <Button
-                          fullWidth
-                          variant="contained"
-                          sx={{ mt: 3, mb: 2 }}
-                          onClick={handleSignUpClick}
+                    {!showSecondForm ? (
+                      <Box>
+                        <div style={{ width: "100%", justifyContent: "center", display: "flex" }}>
+                          <img src="../../assets/dino-icon.svg" width={"80px"} />
+                        </div>
+                        <Typography
+                          component="h1"
+                          variant="h5"
+                          sx={{ justifyContent: "center", display: "flex" }}
                         >
-                          Sign Up
-                        </Button>
-                        {showTermsAlert && (
-                          <TermsAndConditions
-                            open={showTermsAlert}
-                            handleClose={() => setShowTermsAlert(false)}
-                            handleAgree={handleAgreeTerms}
-                          />
-                        )}
-                        <Grid container justifyContent="flex-end">
-                          <Grid item>
-                            <Link href="/login" variant="body2">
-                              Already have an account? Sign in
-                            </Link>
+                          Create Account
+                        </Typography>
+                        <Box
+                          component="form"
+                          noValidate
+                          onSubmit={handleSubmit}
+                          sx={{ mt: 3 }}
+                        >
+                          <Grid container spacing={1}>
+                            <Grid item xs={8}>
+                              <TextField
+                                required
+                                fullWidth
+                                id="name"
+                                label="Name"
+                                name="name"
+                                autoComplete="name"
+                                onChange={(e) => setName(e.target.value)}
+                              />
+                            </Grid>
+
+                            <Grid item xs={4}>
+                              <TextField
+                                required
+                                fullWidth
+                                id="employId"
+                                label="Registration Number"
+                                name="employId"
+                                autoComplete="employId"
+                                onChange={(e) => setEmployId(e.target.value)}
+                              />
+                            </Grid>
+
+                            <Grid item xs={12} sm={6}>
+                              <TextField
+                                required
+                                fullWidth
+                                id="department"
+                                label="Department"
+                                name="department"
+                                onChange={(e) => setDepartment(e.target.value)}
+                              />
+                            </Grid>
+
+                            <Grid item xs={12} sm={6}>
+                              <TextField
+                                required
+                                fullWidth
+                                id="jobTitle"
+                                label="Title"
+                                name="jobTitle"
+                                autoComplete="jobTitle"
+                                onChange={(e) => setJobTitle(e.target.value)}
+                              />
+                            </Grid>
+
+                            <Grid item xs={12}>
+                              <TextField
+                                required
+                                fullWidth
+                                id="email"
+                                label="Email Address"
+                                name="email"
+                                autoComplete="email"
+                                onChange={(e) => setEmail(e.target.value)}
+                              />
+                            </Grid>
+
+                            <Grid item xs={12}>
+                              <TextField
+                                required
+                                fullWidth
+                                id="phone"
+                                label="Phone Number"
+                                name="phone"
+                                autoComplete="phone"
+                                onChange={(e) => setPhone(e.target.value)}
+                              />
+                            </Grid>
+
+                            <Grid item xs={12}>
+                              <TextField
+                                required
+                                fullWidth
+                                name="password"
+                                label="Password"
+                                type="password"
+                                id="password"
+                                autoComplete="new-password"
+                                onChange={(e) => setPassword(e.target.value)}
+                              />
+                            </Grid>
+
+                            <Grid item xs={12}>
+                              <TextField
+                                required
+                                fullWidth
+                                name="confirmationPassword"
+                                label="Confirm Password"
+                                type="password"
+                                id="confirmationPassword"
+                                autoComplete="new-password"
+                                onChange={(e) => setConfirmationPassword(e.target.value)}
+                              />
+                            </Grid>
+
+                            <Grid item xs={12}>
+                              <Button
+                                fullWidth
+                                variant="outlined"
+                                color="primary"
+                                onClick={handleSignUpClick}
+                              >
+                                Read the terms of use
+                              </Button>
+                            </Grid>
+
+                            <Grid item xs={12}>
+                              <FormControlLabel
+                                control={
+                                  <Checkbox
+                                    color="primary"
+                                    required
+                                    checked={termsAccepted}
+                                    onChange={(e) => setTermsAccepted(e.target.checked)}
+                                  />
+                                }
+                                label="I accept the terms of use"
+                              />
+                            </Grid>
                           </Grid>
-                        </Grid>
+                          <Button
+                            type="submit"
+                            fullWidth
+                            variant="contained"
+                            sx={{ mt: 3, mb: 2 }}
+                            disabled={!termsAccepted}
+                            onClick={handleNextClick}
+                          >
+                            Next
+                          </Button>
+                        </Box>
                       </Box>
-                    </Box>
-                    {/* <Copyright /> */}
+                    ) : (
+                      <Box>
+                        <Typography
+                          component="h1"
+                          variant="h5"
+                          sx={{ justifyContent: "center", display: "flex" }}
+                        >
+                          Verify QR Code
+                        </Typography>
+                        <Box
+                          component="form"
+                          noValidate
+                          onSubmit={handleSubmit}
+                          sx={{ mt: 3 }}
+                        >
+                          <Grid container spacing={1}>
+                            <Grid item xs={12}>
+                              {qrCode && (
+                                <div style={{ textAlign: "center", margin: "5px 0" }}>
+                                  <Button variant="outlined" disableElevation href="https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2&hl=pt_BR&gl=US">
+                                    Download Google Authenticator
+                                  </Button>
+                                  <img src={qrCode} alt="QR Code" style={{ maxWidth: "100%", height: "auto" }}/>
+                                </div>
+                              )}
+                            </Grid>
+
+                            <Grid item xs={12}>
+                              <TextField
+                                required
+                                fullWidth
+                                id="token"
+                                label="Token"
+                                name="token"
+                                autoComplete="token"
+                                onChange={(e) => setToken(e.target.value)}
+                              />
+                            </Grid>
+                          </Grid>
+                          <Button
+                            type="submit"
+                            fullWidth
+                            variant="contained"
+                            sx={{ mt: 3, mb: 2 }}
+                            onClick={() => handleVerifyToken(token)}
+                          >
+                            Finish
+                          </Button>
+                        </Box>
+                      </Box>
+                    )}
                   </Box>
                 </Box>
               </Box>
@@ -382,6 +431,8 @@ const handleAgreeTerms = (e) => {
           </Grid>
         </Grid>
       </Grid>
+
+      <TermsAndConditions open={showTermsAlert} onAgree={handleAgreeTerms} />
     </ThemeProvider>
   );
 }

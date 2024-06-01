@@ -17,6 +17,9 @@ import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../services/authContext";
 import { login } from "../../services/authService";
 
+import QRCodeService from "../../services/QRCodeService";
+import Alert from "@mui/material/Alert";
+
 function LoadingAnimation() {
   return (
     <img
@@ -63,33 +66,60 @@ export default function Login() {
   const { setAuthenticated, setUserData } = useContext(AuthContext);
   const navigate = useNavigate();
 
+  const [step, setStep] = useState(1); // Estado para controlar a etapa do formulário
+  const [googleAuthCode, setGoogleAuthCode] = useState(""); // Estado para o código do Google Authenticator
+  const [verifying, setVerifying] = useState(false); // Estado para atrasar a verificação do formulário
+  const [showErrorAlert, setShowErrorAlert] = useState(false); // estado para controlar a exibição do alerta de erro
+
   const handleSignIn = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    // setLoading(true);
     setError(null);
 
     try {
       const { user, userData } = await login(email, password);
       setUserData(userData);
-      setAuthenticated(true);
-      navigate("/");
+      setStep(2); // Muda para a etapa 2 se o login inicial for bem-sucedido
     } catch (error) {
       console.error("Erro ao fazer login:", error);
       setError(error.message);
     } finally {
-      setLoading(false);
+      // setLoading(false);
     }
   };
 
-  // const handleSubmit = (event) => {
-  //   event.preventDefault();
-  //   const data = new FormData(event.currentTarget);
-  // };
+  const handleVerifyGoogleAuthCode = async (e) => {
+    e.preventDefault();
+    setVerifying(true); // Ativa o estado de verificação
+    setLoading(true);
+    setError(null);
+
+    try {
+      const verificationResult = await new Promise((resolve) => {
+        setTimeout(() => {
+          resolve(QRCodeService.verifyToken(email, googleAuthCode));
+        }, 1000); // Simula um tempo de espera de 1 seg
+      });
+      if (verificationResult === "Verified") {
+        setAuthenticated(true);
+        navigate("/");
+      } else {
+        setError("Invalid Google Authenticator code.");
+      }
+    } catch (error) {
+      console.error("Error verifying Google Authenticator code:", error);
+      setError(error.message);
+      setShowErrorAlert(true); // Exibir o alerta de erro
+    } finally {
+      setLoading(false);
+      setVerifying(false); // Desativa o estado de verificação
+    }
+  };
 
   if (loading) {
     return <LoadingAnimation />;
   }
-    
+
   return (
     <ThemeProvider theme={defaultTheme}>
       <CssBaseline />
@@ -147,7 +177,7 @@ export default function Login() {
               >
                 <Box
                   sx={{
-                    minHeight: { md: "100vh", xs: "33vh"},
+                    minHeight: { md: "100vh", xs: "33vh" },
                     display: "flex",
                     justifyContent: "center",
                     alignItems: "center",
@@ -167,61 +197,123 @@ export default function Login() {
                       borderRadius: "10px",
                     }}
                   >
-                    <Box>
-                      <div style={{width:"100%", justifyContent:"center", display:"flex"}}>
-                        <img src="../../assets/dino-icon.svg" width={"80px"} />{" "}
-                      </div>
-                      <Typography component="h1" variant="h5" sx={{justifyContent:"center", display:"flex"}}>
-                        Sign in
-                      </Typography>
-                      <Box
-                        component="form"
-                        noValidate
-                        onSubmit={handleSignIn}
-                        sx={{ mt: 3 }}
-                      >
-                        <Grid container spacing={2}>
-                          <Grid item xs={12}>
-                            <TextField
-                              required
-                              fullWidth
-                              id="email"
-                              label="Email Address"
-                              name="email"
-                              autoComplete="email"
-                              onChange={(e) => setEmail(e.target.value)}
-                            />
-                          </Grid>
-                          <Grid item xs={12}>
-                            <TextField
-                              required
-                              fullWidth
-                              name="password"
-                              label="Password"
-                              type="password"
-                              id="password"
-                              autoComplete="new-password"
-                              onChange={(e) => setPassword(e.target.value)}
-                            />
-                          </Grid>
-                        </Grid>
-                        <Button
-                          fullWidth
-                          variant="contained"
-                          sx={{ mt: 3, mb: 2 }}
-                          onClick={handleSignIn}
+                    {step === 1 ? (
+                      <Box>
+                        <div
+                          style={{
+                            width: "100%",
+                            justifyContent: "center",
+                            display: "flex",
+                          }}
                         >
-                          Sign In
-                        </Button>
-                        <Grid container justifyContent="flex-end">
-                          <Grid item>
-                            <Link href="/register" variant="body2">
-                              I don't have account yet
-                            </Link>
+                          <img
+                            src="../../assets/dino-icon.svg"
+                            width={"80px"}
+                          />{" "}
+                        </div>
+                        <Typography
+                          component="h1"
+                          variant="h5"
+                          sx={{ justifyContent: "center", display: "flex" }}
+                        >
+                          Sign in
+                        </Typography>
+                        <Box
+                          component="form"
+                          noValidate
+                          onSubmit={handleSignIn}
+                          sx={{ mt: 3 }}
+                        >
+                          <Grid container spacing={2}>
+                            <Grid item xs={12}>
+                              <TextField
+                                required
+                                fullWidth
+                                id="email"
+                                label="Email Address"
+                                name="email"
+                                autoComplete="email"
+                                onChange={(e) => setEmail(e.target.value)}
+                              />
+                            </Grid>
+                            <Grid item xs={12}>
+                              <TextField
+                                required
+                                fullWidth
+                                name="password"
+                                label="Password"
+                                type="password"
+                                id="password"
+                                autoComplete="new-password"
+                                onChange={(e) => setPassword(e.target.value)}
+                              />
+                            </Grid>
                           </Grid>
-                        </Grid>
+                          <Button
+                            type="submit"
+                            fullWidth
+                            variant="contained"
+                            sx={{ mt: 3, mb: 2 }}
+                          >
+                            Sign In
+                          </Button>
+                          <Grid container justifyContent="flex-end">
+                            <Grid item>
+                              <Link href="/register" variant="body2">
+                                I don't have account yet
+                              </Link>
+                            </Grid>
+                          </Grid>
+                        </Box>
                       </Box>
-                    </Box>
+                    ) : (
+                      <Box>
+                        <Typography
+                          component="h1"
+                          variant="h5"
+                          sx={{ justifyContent: "center", display: "flex" }}
+                        >
+                          Enter Google Authenticator Code
+                        </Typography>
+                        <Box
+                          component="form"
+                          noValidate
+                          onSubmit={handleVerifyGoogleAuthCode}
+                          sx={{ mt: 3 }}
+                        >
+                          <Grid container spacing={2}>
+                            <Grid item xs={12}>
+                              <TextField
+                                required
+                                fullWidth
+                                id="googleAuthCode"
+                                label="Google Authenticator Code"
+                                name="googleAuthCode"
+                                autoComplete="off"
+                                onChange={(e) =>
+                                  setGoogleAuthCode(e.target.value)
+                                }
+                                inputProps={{ maxLength: 6 }} // Restringe a 6 dígitos
+                              />
+                            </Grid>
+                          </Grid>
+                          <Button
+                            type="submit"
+                            fullWidth
+                            variant="contained"
+                            sx={{ mt: 3, mb: 2 }}
+                            disabled={googleAuthCode.length !== 6} // Desabilita se não tiver 6 dígitos
+                          >
+                            Verify Code
+                          </Button>
+                          {showErrorAlert && (
+                            <Alert severity="error" sx={{ mt: 2 }}>
+                              Invalid Google Authenticator code.
+                            </Alert>
+                          )}
+                        </Box>
+                      </Box>
+                    )}
                     {/* <Copyright /> */}
                   </Box>
                 </Box>
