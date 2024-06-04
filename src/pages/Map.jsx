@@ -150,7 +150,7 @@ export default function Map() {
   const handleDownloadReport = async () => {
     const mapBlob = await exportChartToPng(mapRef);
 
-    const doc = createDocxContent(mapBlob, feeling, selectedRegion, activeStates)
+    const doc = await createDocxContent(mapBlob, feeling, selectedRegion, activeStates)
 
     Packer.toBlob(doc).then(blob => {
       console.log(blob);
