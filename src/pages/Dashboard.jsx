@@ -73,6 +73,8 @@ const Dashboard = () => {
 
   const genderChartRef = useRef(null);
   const sentimentByMonthRef = useRef(null);
+  const reviewsByCategoryRef = useRef(null);
+  const topWordsRef = useRef(null);
 
   const handleClearFilters = () => {
     setSelectedRegions([]);
@@ -269,8 +271,17 @@ const Dashboard = () => {
   const handleDownloadReport = async () => {
     const genderChartBlob = await exportChartToPng(genderChartRef);
     const sentimentByMonthChartBlob = await exportChartToPng(sentimentByMonthRef);
+    const reviewsByCategoryBlob = await exportChartToPng(reviewsByCategoryRef);
+    const topWordsBlob = await exportChartToPng(topWordsRef);
 
-    const doc = createDocxContent(feelingAll, feelingData, genderChartBlob, sentimentByMonthChartBlob)
+    const imageBlobs = {
+      genderChartBlob,
+      sentimentByMonthChartBlob,
+      reviewsByCategoryBlob,
+      topWordsBlob
+    }
+
+    const doc = createDocxContent(feelingAll, feelingData, imageBlobs)
 
     Packer.toBlob(doc).then(blob => {
       console.log(blob);
@@ -591,6 +602,7 @@ const Dashboard = () => {
         </Box>
         {/*   REVIEWS BY CATEGORY  */}
         <Box
+          ref={reviewsByCategoryRef} 
           gridColumn="span 4"
           gridRow="span 2"
           backgroundColor={colors.primary[400]}
@@ -660,6 +672,7 @@ const Dashboard = () => {
 
         {/* Top Words */}
         <Box
+          ref={topWordsRef}
           gridColumn="span 4"
           gridRow="span 2"
           backgroundColor={colors.primary[400]}
