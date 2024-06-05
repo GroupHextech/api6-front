@@ -6,15 +6,17 @@ function numberWithCommas (x) {
   return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 }
 
-export const createDocxContent = (feelingAll, feelingData, genderChartBlob, sentimentByMonthRef) => {
+export const createDocxContent = (feelingAll, feelingData, imageBlobs) => {
   const subtitles = [
     { text: "Total dos dados de vendas das lojas Americanas do ano de 2018.", feeling: feelingAll },
     // { text: "Total dos dados da pesquisa:" },
     // { text: "Selecionado os estados ou região: São Paulo e Acre.", feeling: feelingData },
     { text: "Total definido pelo filtro:", feeling: feelingData },
     { text: "Gráficos demonstrativos" },
-    { text: "Gender:", imageBlob: genderChartBlob },
-    { text: "Review sentiment by month:", imageBlob: sentimentByMonthRef }
+    { text: "Gender:", imageBlob: imageBlobs.genderChartBlob, size: [250, 400] },
+    { text: "Review sentiment by month:", imageBlob: imageBlobs.sentimentByMonthChartBlob, size: [250, 600] },
+    { text: "Reviews by Category:", imageBlob: imageBlobs.reviewsByCategoryBlob, size: [250, 400] },
+    { text: "Top Words:", imageBlob: imageBlobs.topWordsBlob, size: [250, 400] }
   ]
 
   const bullets = [
@@ -57,7 +59,7 @@ export const createDocxContent = (feelingAll, feelingData, genderChartBlob, sent
       
       if (subtitles[index].imageBlob) {
         contents.push(breakLine())
-        contents.push(getImageFromBlob(subtitles[index].imageBlob))
+        contents.push(getImageFromBlob(subtitles[index].imageBlob, subtitles[index].size))
         contents.push(breakLine())
       }
     }
@@ -87,15 +89,15 @@ export const createDocxContent = (feelingAll, feelingData, genderChartBlob, sent
     )
   }
 
-  const getImageFromBlob = (myBlobData) => {
+  const getImageFromBlob = (myBlobData, size) => {
     return new Paragraph({
       children: [
         new ImageRun({
           type: "jpg",
           data: myBlobData,
           transformation: {
-            width: 300,
-            height: 200
+            height: size[0],
+            width: size[1]
           }
         })
       ]
