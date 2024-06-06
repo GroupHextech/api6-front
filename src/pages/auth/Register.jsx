@@ -371,6 +371,13 @@ export default function Register() {
                           >
                             Next
                           </Button>
+                          <Grid container justifyContent="flex-end">
+                            <Grid item>
+                              <Link href="/login" variant="body2">
+                              Already have an account? Sign in
+                              </Link>
+                            </Grid>
+                          </Grid>
                         </Box>
                       </Box>
                     ) : (
@@ -407,7 +414,7 @@ export default function Register() {
                                 id="token"
                                 label="Token"
                                 name="token"
-                                autoComplete="token"
+                                autoComplete="off"
                                 onChange={(e) => setToken(e.target.value)}
                               />
                             </Grid>
