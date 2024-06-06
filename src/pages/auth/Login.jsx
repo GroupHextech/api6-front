@@ -17,6 +17,9 @@ import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../services/authContext";
 import { login } from "../../services/authService";
 
+import CircularProgress from "@mui/material/CircularProgress";
+import { green } from "@mui/material/colors";
+
 import QRCodeService from "../../services/QRCodeService";
 import Alert from "@mui/material/Alert";
 
@@ -62,6 +65,7 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [signInLoading, setSignInLoading] = useState(false);
   const [error, setError] = useState(null);
   const { setAuthenticated, setUserData } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -73,7 +77,7 @@ export default function Login() {
 
   const handleSignIn = async (e) => {
     e.preventDefault();
-    // setLoading(true);
+    setSignInLoading(true);
     setError(null);
 
     try {
@@ -84,7 +88,7 @@ export default function Login() {
       console.error("Erro ao fazer login:", error);
       setError(error.message);
     } finally {
-      // setLoading(false);
+      setSignInLoading(false);
     }
   };
 
@@ -257,6 +261,19 @@ export default function Login() {
                           >
                             Sign In
                           </Button>
+                          {signInLoading && (
+                            <CircularProgress
+                              size={24}
+                              sx={{
+                                color: green[500],
+                                position: "absolute",
+                                top: "50%",
+                                left: "50%",
+                                marginTop: "-12px",
+                                marginLeft: "-12px",
+                              }}
+                            />
+                          )}
                           <Grid container justifyContent="flex-end">
                             <Grid item>
                               <Link href="/register" variant="body2">
