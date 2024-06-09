@@ -29,7 +29,7 @@ export const AuthProvider = ({ children }) => {
 
   const resetTimer = () => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    const id = setTimeout(logout, 1 * 60 * 1000); // 1min
+    const id = setTimeout(logout, 60 * 60 * 1000); // 1min
     timeoutRef.current = id;
   };
 
