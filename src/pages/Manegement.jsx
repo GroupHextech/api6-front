@@ -69,10 +69,12 @@ export default function Management() {
         // Fetch term types
         const termsCollection = collection(db, "terms");
         const termsSnapshot = await getDocs(termsCollection);
-        const termsList = termsSnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        })).filter(term => term.active);
+        const termsList = termsSnapshot.docs
+          .map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          }))
+          .filter((term) => term.active);
 
         const uniqueTermTypes = [
           ...new Set(termsList.map((term) => term.type)),
@@ -136,7 +138,8 @@ export default function Management() {
 
   const handleAddNewTerm = async () => {
     try {
-      const termType = selectedTermType === "new" ? newTermType : selectedTermType;
+      const termType =
+        selectedTermType === "new" ? newTermType : selectedTermType;
 
       // Inactivate the previous term of the same type
       if (selectedTermType !== "new") {
@@ -146,7 +149,9 @@ export default function Management() {
           id: doc.id,
           ...doc.data(),
         }));
-        const previousTerm = termsList.find((term) => term.type === termType && term.active);
+        const previousTerm = termsList.find(
+          (term) => term.type === termType && term.active
+        );
         if (previousTerm) {
           await updateDoc(doc(db, "terms", previousTerm.id), {
             active: false,
@@ -445,7 +450,6 @@ export default function Management() {
                 <Typography variant="body1">
                   {term.type} - Versão {term.latestVersion}
                 </Typography>
-    
               </Box>
             ))}
           </Box>
