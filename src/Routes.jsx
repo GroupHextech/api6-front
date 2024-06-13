@@ -13,6 +13,7 @@ import UserData from "./pages/UserData";
 import Manegement from "./pages/Manegement";
 import { AuthProvider } from "./services/authContext";
 import PrivateRoute from "./components/PrivateRoute";
+import Termos from "./pages/Terms"
 
 export default function AppRoutes() {
   const [theme, colorMode] = useMode();
@@ -21,6 +22,7 @@ export default function AppRoutes() {
   const location = useLocation();
   const isLoginPage = location.pathname === "/login";
   const isRegisterPage = location.pathname === "/register";
+  const isTermPage = location.pathname === "/termos"
 
   return (
     <AuthProvider>
@@ -28,9 +30,9 @@ export default function AppRoutes() {
         <ThemeProvider theme={theme}>
           <CssBaseline />
           <div className="app">
-            {!isLoginPage && !isRegisterPage && <Sidebar isSidebar={isSidebar} />}
+            {!isLoginPage && !isRegisterPage && !isTermPage && <Sidebar isSidebar={isSidebar} />}
             <main className="content" style={{ overflowY: 'scroll' }}>
-              {!isLoginPage && !isRegisterPage && <Topbar setIsSidebar={setIsSidebar} />}
+              {!isLoginPage && !isRegisterPage && !isTermPage &&<Topbar setIsSidebar={setIsSidebar} />}
               <Routes>
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
@@ -40,6 +42,9 @@ export default function AppRoutes() {
                   <Route path="/map" element={<Map />} />
                   <Route path="/userData" element={<UserData />} />
                   <Route path="/manege" element={<Manegement />} />
+                  <Route path="/termos" element={<Termos />} />
+
+
                 </Route>
                 {/* Adicione outras rotas aqui */}
               </Routes>

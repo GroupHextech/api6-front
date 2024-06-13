@@ -13,6 +13,7 @@ import {
 } from "@mui/material";
 
 import { Box, Button, Typography, useTheme, Stack } from "@mui/material";
+import { styled } from '@mui/material/styles';
 import { tokens } from "../theme";
 import domtoimage from 'dom-to-image-more';
 import { createDocxContent } from "../reports/Docx/DashboardReport";
@@ -35,11 +36,13 @@ import SentimentVerySatisfiedIcon from "@mui/icons-material/SentimentVerySatisfi
 import SentimentNeutralIcon from "@mui/icons-material/SentimentNeutral";
 import SentimentVeryDissatisfiedIcon from "@mui/icons-material/SentimentVeryDissatisfied";
 import CleaningServicesIcon from "@mui/icons-material/CleaningServices";
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 
 // SERVICES:
 import { getFeeling } from "../services/SalesService";
 import { getTopWords } from "../services/SalesService";
 import { saveAs } from 'file-saver';
+import { uploadCsvFile } from "../services/csvService";
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -66,7 +69,7 @@ const Dashboard = () => {
   });
 
   const [feelingAll, setFeelingAll] = useState(undefined);
-  const [topWordsData, setTopWordsData]= useState([]);
+  const [topWordsData, setTopWordsData] = useState([]);
   const [chartType, setChartType] = useState("bar"); // Default chart type
   const [selectedRegions, setSelectedRegions] = useState([]);
   const [selectedStates, setSelectedStates] = useState([]);
@@ -172,6 +175,18 @@ const Dashboard = () => {
     "TO",
   ];
 
+  const VisuallyHiddenInput = styled('input')({
+    clip: 'rect(0 0 0 0)',
+    clipPath: 'inset(50%)',
+    height: 1,
+    overflow: 'hidden',
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    whiteSpace: 'nowrap',
+    width: 1,
+  });
+
   function getAbbreviation(fullStateName) {
     const index = regioesDoBrasil.Todas.indexOf(fullStateName);
     if (index !== -1) {
@@ -183,7 +198,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     async function handleFeelingData() {
-      let feelingData; 
+      let feelingData;
 
       let regions = [];
       let states = [];
@@ -221,7 +236,7 @@ const Dashboard = () => {
         });
 
         setFeelingData(finalFeelingData);
-        if (!feelingAll) setFeelingAll({...finalFeelingData})
+        if (!feelingAll) setFeelingAll({ ...finalFeelingData })
         setFilter({ states, regions, feeling });
       } catch (error) {
         console.error("Error fetching feeling data:", error.message);
@@ -308,13 +323,13 @@ const Dashboard = () => {
       } else if (selectedRegions.length) {
         regions = selectedRegions;
       }
-	  
-	    if (!regions.length) {
+
+      if (!regions.length) {
         states = selectedStates.map((state) => getAbbreviation(state));
       }
-	  
-	    feeling = selectedSentiment;
-  
+
+      feeling = selectedSentiment;
+
       try {
         const topWordsData = await getTopWords(states, regions, feeling);
         setTopWordsData(topWordsData);
@@ -327,13 +342,40 @@ const Dashboard = () => {
 
     fetchDataTopWords();
   }, [selectedRegions, selectedStates, selectedSentiment]);
-  
+
+  const handleCSVUpload = (event) => {
+    const file = event.target.files[0];
+    uploadCsvFile(file)
+  }
+
   return (
     <Box m="20px">
       {/* HEADER */}
       <Box display="flex" justifyContent="space-between" alignItems="center">
         <Header title="DASHBOARD" subtitle="Welcome to your dashboard" />
-        <Box>
+        <Box
+          display="flex"
+          gap="8px"
+        >
+          <Button
+            sx={{
+              backgroundColor: colors.blueAccent[700],
+              color: colors.grey[100],
+              fontSize: "14px",
+              fontWeight: "bold",
+              padding: "8px 20px",
+            }}
+            component="label"
+            role={undefined}
+            variant="contained"
+            tabIndex={-1}
+            startIcon={<CloudUploadIcon />}
+            onChange={handleCSVUpload}
+          >
+            Upload
+            <VisuallyHiddenInput type="file" accept=".csv" />
+          </Button>
+
           <Button
             sx={{
               backgroundColor: colors.blueAccent[700],
@@ -342,6 +384,7 @@ const Dashboard = () => {
               fontWeight: "bold",
               padding: "10px 20px",
             }}
+            variant="contained"
             onClick={handleDownloadReport}
           >
             <DownloadOutlinedIcon />
@@ -514,8 +557,8 @@ const Dashboard = () => {
                 : 0
             }
             increase={`${feelingData.total !== 0
-                ? ((feelingData.positive * 100) / feelingData.total).toFixed(2)
-                : 0
+              ? ((feelingData.positive * 100) / feelingData.total).toFixed(2)
+              : 0
               }%`}
             icon={
               <SentimentVerySatisfiedIcon
@@ -541,8 +584,8 @@ const Dashboard = () => {
                 : 0
             }
             increase={`${feelingData.total !== 0
-                ? ((feelingData.neutral * 100) / feelingData.total).toFixed(2)
-                : 0
+              ? ((feelingData.neutral * 100) / feelingData.total).toFixed(2)
+              : 0
               }%`}
             icon={
               <SentimentNeutralIcon
@@ -568,8 +611,8 @@ const Dashboard = () => {
                 : 0
             }
             increase={`${feelingData.total !== 0
-                ? ((feelingData.negative * 100) / feelingData.total).toFixed(2)
-                : 0
+              ? ((feelingData.negative * 100) / feelingData.total).toFixed(2)
+              : 0
               }%`}
             icon={
               <SentimentVeryDissatisfiedIcon
@@ -602,7 +645,7 @@ const Dashboard = () => {
         </Box>
         {/*   REVIEWS BY CATEGORY  */}
         <Box
-          ref={reviewsByCategoryRef} 
+          ref={reviewsByCategoryRef}
           gridColumn="span 4"
           gridRow="span 2"
           backgroundColor={colors.primary[400]}
@@ -679,19 +722,19 @@ const Dashboard = () => {
           p="30px"
           display="flex"
           flexDirection="column"
-          // mt="25px"
+        // mt="25px"
         >
           <Typography variant="h5" fontWeight="600">
             Top Words
-          </Typography>          
-                
+          </Typography>
+
           <TagCloud
-              minSize={15}
-              maxSize={25}
-              tags={topWordsData}
-              //onClick={tag => alert(`'${tag.value}' was selected!`)}
-            />      
-             
+            minSize={15}
+            maxSize={25}
+            tags={topWordsData}
+          //onClick={tag => alert(`'${tag.value}' was selected!`)}
+          />
+
         </Box>
       </Box>
 

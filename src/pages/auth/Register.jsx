@@ -1,5 +1,4 @@
-import * as React from "react";
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Avatar from "@mui/material/Avatar";
 import Button from "@mui/material/Button";
 import CssBaseline from "@mui/material/CssBaseline";
@@ -15,22 +14,16 @@ import Container from "@mui/material/Container";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { useCreateUserWithEmailAndPassword } from "react-firebase-hooks/auth";
 import { auth, firestore } from "../../services/firebaseConfig";
-import { doc, setDoc, addDoc, collection } from "@firebase/firestore";
+import { doc, setDoc, collection, getDocs } from "@firebase/firestore";
 import { useNavigate } from "react-router-dom";
 import { serverTimestamp } from "@firebase/firestore";
 
 import QRCodeService from "../../services/QRCodeService";
-
 import TermsAndConditions from "../../components/register/TermsAndConditions";
 
 function Copyright(props) {
   return (
-    <Typography
-      variant="body2"
-      color="text.secondary"
-      align="center"
-      {...props}
-    >
+    <Typography variant="body2" color="text.secondary" align="center" {...props}>
       {"Copyright © "}
       <Link color="inherit" href="https://mui.com/">
         HexTech
@@ -52,14 +45,15 @@ export default function Register() {
   const [termOfEmail, setTermOfEmail] = useState(true);
   const [termOfSms, setTermOfSms] = useState(true);
   const [showTermsAlert, setShowTermsAlert] = useState(false);
-  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState({});
   const [showSecondForm, setShowSecondForm] = useState(false);
   const [jobTitle, setJobTitle] = useState("");
   const [department, setDepartment] = useState("");
   const [employId, setEmployId] = useState("");
-
   const [token, setToken] = useState("");
   const [qrCode, setQRCode] = useState("");
+  const [terms, setTerms] = useState([]);
+  const [termsAcceptedDetails, setTermsAcceptedDetails] = useState([]);
 
   const navigate = useNavigate();
 
@@ -76,18 +70,16 @@ export default function Register() {
     const userRef = doc(userCollectionRef, uid);
     try {
       await setDoc(userRef, {
-        useTerm: true,
         name,
         email,
         jobTitle,
         department,
         employId,
         phone,
-        termOfEmail,
-        termOfSms,
         role: "USER",
         foto: "../../assets/user.png",
         createdAt: serverTimestamp(),
+        terms: termsAcceptedDetails,
       });
       console.log("User created successfully!");
     } catch (error) {
@@ -97,7 +89,6 @@ export default function Register() {
 
   const handleSubmit = (event) => {
     event.preventDefault();
-    const data = new FormData(event.currentTarget);
   };
 
   const handleSignUpClick = () => {
@@ -105,11 +96,24 @@ export default function Register() {
   };
 
   const handleAgreeTerms = () => {
-    setTermsAccepted(true);
     setShowTermsAlert(false);
   };
 
   const handleNextClick = async () => {
+    if (!termsAccepted['USO']) {
+      alert("You must accept the terms of use to continue.");
+      return;
+    }
+
+    const currentTimestamp = new Date();
+    const termsDetails = terms.map(term => ({
+      type: term.type,
+      version: term.version,
+      accepted: termsAccepted[term.type] || false,
+      timestamp: currentTimestamp,
+    }));
+    setTermsAcceptedDetails(termsDetails);
+
     setShowSecondForm(true);
     try {
       const generatedQRCode = await QRCodeService.generateQRCode(email);
@@ -132,7 +136,7 @@ export default function Register() {
             const user = userCredential.user;
             const userUid = user.uid;
             createUser(userUid);
-            navigate("/");
+            navigate("/login");
           })
           .catch((error) => {
             console.error("Error creating user:", error);
@@ -143,6 +147,44 @@ export default function Register() {
     } catch (error) {
       console.error("Error verifying Google Authenticator code:", error);
     }
+  };
+
+  useEffect(() => {
+    const fetchTerms = async () => {
+      try {
+        const termsCollection = collection(firestore, "terms");
+        const termsSnapshot = await getDocs(termsCollection);
+        const termsList = termsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        // Filter and get the latest version of each term type
+        const latestTerms = termsList.reduce((acc, term) => {
+          if (!acc[term.type] || acc[term.type].version < term.version) {
+            acc[term.type] = term;
+          }
+          return acc;
+        }, {});
+
+        const finalTermsList = Object.values(latestTerms);
+
+        setTerms(finalTermsList);
+        const initialTermsAccepted = {};
+        finalTermsList.forEach(term => {
+          initialTermsAccepted[term.type] = false;
+        });
+        setTermsAccepted(initialTermsAccepted);
+      } catch (error) {
+        console.error("Error fetching terms:", error);
+      }
+    };
+
+    fetchTerms();
+  }, []);
+
+  const handleTermChange = (type, checked) => {
+    setTermsAccepted(prev => ({
+      ...prev,
+      [type]: checked,
+    }));
   };
 
   return (
@@ -347,35 +389,37 @@ export default function Register() {
                               </Button>
                             </Grid>
 
-                            <Grid item xs={12}>
-                              <FormControlLabel
-                                control={
-                                  <Checkbox
-                                    color="primary"
-                                    required
-                                    checked={termsAccepted}
-                                    onChange={(e) => setTermsAccepted(e.target.checked)}
-                                  />
-                                }
-                                label="I accept the terms of use"
-                              />
-                            </Grid>
-                          </Grid>
-                          <Button
-                            type="submit"
-                            fullWidth
-                            variant="contained"
-                            sx={{ mt: 3, mb: 2 }}
-                            disabled={!termsAccepted}
-                            onClick={handleNextClick}
-                          >
-                            Next
-                          </Button>
-                          <Grid container justifyContent="flex-end">
-                            <Grid item>
-                              <Link href="/login" variant="body2">
-                              Already have an account? Sign in
-                              </Link>
+                            {terms.map((term) => (
+                              <Grid item xs={12} key={term.id}>
+                                <FormControlLabel
+                                  control={
+                                    <Checkbox
+                                      color="primary"
+                                      checked={termsAccepted[term.type]}
+                                      onChange={(e) => handleTermChange(term.type, e.target.checked)}
+                                    />
+                                  }
+                                  label={`I accept the ${term.type} terms`}
+                                />
+                              </Grid>
+                            ))}
+
+                            <Button
+                              type="submit"
+                              fullWidth
+                              variant="contained"
+                              sx={{ mt: 3, mb: 2 }}
+                              disabled={!termsAccepted['USO']}
+                              onClick={handleNextClick}
+                            >
+                              Next
+                            </Button>
+                            <Grid container justifyContent="flex-end">
+                              <Grid item>
+                                <Link href="/login" variant="body2">
+                                  Already have an account? Sign in
+                                </Link>
+                              </Grid>
                             </Grid>
                           </Grid>
                         </Box>
