@@ -14,22 +14,16 @@ import Container from "@mui/material/Container";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { useCreateUserWithEmailAndPassword } from "react-firebase-hooks/auth";
 import { auth, firestore } from "../../services/firebaseConfig";
-import { doc, setDoc, addDoc, collection, getDocs } from "@firebase/firestore";
+import { doc, setDoc, collection, getDocs } from "@firebase/firestore";
 import { useNavigate } from "react-router-dom";
 import { serverTimestamp } from "@firebase/firestore";
 
 import QRCodeService from "../../services/QRCodeService";
-
 import TermsAndConditions from "../../components/register/TermsAndConditions";
 
 function Copyright(props) {
   return (
-    <Typography
-      variant="body2"
-      color="text.secondary"
-      align="center"
-      {...props}
-    >
+    <Typography variant="body2" color="text.secondary" align="center" {...props}>
       {"Copyright © "}
       <Link color="inherit" href="https://mui.com/">
         HexTech
@@ -59,6 +53,7 @@ export default function Register() {
   const [token, setToken] = useState("");
   const [qrCode, setQRCode] = useState("");
   const [terms, setTerms] = useState([]);
+  const [termsAcceptedDetails, setTermsAcceptedDetails] = useState([]);
 
   const navigate = useNavigate();
 
@@ -75,18 +70,16 @@ export default function Register() {
     const userRef = doc(userCollectionRef, uid);
     try {
       await setDoc(userRef, {
-        useTerm: true,
         name,
         email,
         jobTitle,
         department,
         employId,
         phone,
-        termOfEmail,
-        termOfSms,
         role: "USER",
         foto: "../../assets/user.png",
         createdAt: serverTimestamp(),
+        terms: termsAcceptedDetails,
       });
       console.log("User created successfully!");
     } catch (error) {
@@ -112,6 +105,15 @@ export default function Register() {
       return;
     }
 
+    const currentTimestamp = new Date();
+    const termsDetails = terms.map(term => ({
+      type: term.type,
+      version: term.version,
+      accepted: termsAccepted[term.type] || false,
+      timestamp: currentTimestamp,
+    }));
+    setTermsAcceptedDetails(termsDetails);
+
     setShowSecondForm(true);
     try {
       const generatedQRCode = await QRCodeService.generateQRCode(email);
@@ -134,7 +136,7 @@ export default function Register() {
             const user = userCredential.user;
             const userUid = user.uid;
             createUser(userUid);
-            navigate("/");
+            navigate("/login");
           })
           .catch((error) => {
             console.error("Error creating user:", error);
@@ -415,7 +417,7 @@ export default function Register() {
                             <Grid container justifyContent="flex-end">
                               <Grid item>
                                 <Link href="/login" variant="body2">
-                                Already have an account? Sign in
+                                  Already have an account? Sign in
                                 </Link>
                               </Grid>
                             </Grid>
