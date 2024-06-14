@@ -37,7 +37,7 @@ export const AuthProvider = ({ children }) => {
     const auth = getAuth();
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
-      setAuthenticated(!!user);
+      // setAuthenticated(!!user);
       setLoading(false);
 
       if (user) {
@@ -45,10 +45,14 @@ export const AuthProvider = ({ children }) => {
         if (storedUserData) {
           setUserData(JSON.parse(storedUserData));
         }
+        // Verifica se o 2FA foi concluído
+        const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
+        setAuthenticated(isAuthenticated);
         resetTimer();
       } else {
         setUserData(null);
         localStorage.removeItem("userData");
+        localStorage.removeItem("isAuthenticated");
       }
     });
 

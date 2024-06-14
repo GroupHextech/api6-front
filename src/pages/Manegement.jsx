@@ -28,6 +28,13 @@ import { getAuth, deleteUser } from "firebase/auth";
 const db = getFirestore();
 const auth = getAuth();
 
+import dayjs from "dayjs";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+
+import { handleRestore } from "../services/SalesService.js";
+
 export default function Management() {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
@@ -39,6 +46,13 @@ export default function Management() {
   const [newTermType, setNewTermType] = useState("");
   const [newTermVersion, setNewTermVersion] = useState("");
   const [newTermContent, setNewTermContent] = useState("");
+
+  const [selectedDate, setSelectedDate] = useState(dayjs());
+  const today = dayjs();
+
+  const handleDateChange = (newValue) => {
+    setSelectedDate(newValue);
+  };
 
   useEffect(() => {
     async function fetchData() {
@@ -346,7 +360,7 @@ export default function Management() {
                   width="100%"
                   p={1}
                   m={1}
-                  bgcolor={colors.primary[500]}
+                  bgcolor={colors.grey[900]}
                   borderRadius={2}
                 >
                   <Typography variant="body1">{user.name}</Typography>
@@ -361,6 +375,28 @@ export default function Management() {
             ) : (
               <Typography variant="body1">Nenhum usuário encontrado</Typography>
             )}
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2, margin: "10px" }}>
+              <LocalizationProvider dateAdapter={AdapterDayjs} locale="pt-BR">
+                <DatePicker
+                  label="Select date"
+                  value={selectedDate}
+                  onChange={handleDateChange}
+                  maxDate={today}
+                  slotProps={{ textField: { variant: "outlined" } }}
+                  format="DD/MM/YYYY"
+                />
+              </LocalizationProvider>
+              {selectedDate && (
+                <div>
+                  <Button
+                    variant="contained"
+                    onClick={() => handleRestore(selectedDate)}
+                  >
+                    Restore Backup
+                  </Button>
+                </div>
+              )}
+            </Box>
           </Box>
 
           <Box

@@ -106,9 +106,11 @@ export default function Login() {
       });
       if (verificationResult === "Verified") {
         setAuthenticated(true);
+        localStorage.setItem('isAuthenticated', true);
         navigate("/");
       } else {
         setError("Invalid Google Authenticator code.");
+        setShowErrorAlert(true);
       }
     } catch (error) {
       console.error("Error verifying Google Authenticator code:", error);
@@ -258,21 +260,24 @@ export default function Login() {
                             fullWidth
                             variant="contained"
                             sx={{ mt: 3, mb: 2 }}
+                            disabled={signInLoading || email === "" || password.length < 6}
                           >
                             Sign In
                           </Button>
                           {signInLoading && (
-                            <CircularProgress
-                              size={24}
-                              sx={{
-                                color: green[500],
-                                position: "absolute",
-                                top: "50%",
-                                left: "50%",
-                                marginTop: "-12px",
-                                marginLeft: "-12px",
-                              }}
-                            />
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                              <CircularProgress
+                                size={24}
+                                sx={{
+                                  color: green[500],
+                                  position: "absolute",
+                                  top: "50%",
+                                  left: "50%",
+                                  marginTop: "-12px",
+                                  marginLeft: "-12px",
+                                }}
+                              />
+                            </Box>
                           )}
                           <Grid container justifyContent="flex-end">
                             <Grid item>
