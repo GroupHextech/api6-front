@@ -37,6 +37,7 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 
 import { handleRestore } from "../services/SalesService.js";
+import { firestore } from "../services/firebaseConfig";
 
 export default function Management() {
   const theme = useTheme();
@@ -109,7 +110,7 @@ export default function Management() {
 
         // Fetch current term version
         const versionQuery = query(
-          collection(db, "VersaoTermo"),
+          collection(firestore, "VersaoTermo"),
           orderBy("version", "desc"),
           limit(1)
         );
@@ -127,21 +128,21 @@ export default function Management() {
   const updateTermVersion = async () => {
     try {
       const versionQuery = query(
-        collection(db, "VersaoTermo"),
+        collection(firestore, "VersaoTermo"),
         orderBy("version", "desc"),
         limit(1)
       );
       const versionSnapshot = await getDocs(versionQuery);
       const latestVersionDoc = versionSnapshot.docs[0];
-      let newVersion = "1.0";
-
+      let newVersion = 1; // Default version as an integer
+  
       if (latestVersionDoc) {
-        const latestVersion = parseFloat(latestVersionDoc.data().version);
-        newVersion = (latestVersion + 0.1).toFixed(1);
+        const latestVersion = parseInt(latestVersionDoc.data().version, 10);
+        newVersion = latestVersion + 1;
       }
-
+  
       // Fetch all active terms
-      const termsCollection = collection(db, "terms");
+      const termsCollection = collection(firestore, "terms");
       const termsSnapshot = await getDocs(termsCollection);
       const activeTerms = termsSnapshot.docs
         .map((doc) => ({
@@ -149,23 +150,23 @@ export default function Management() {
           ...doc.data(),
         }))
         .filter((term) => term.active);
-
+  
       // Create a new version document with the new version and active terms
-      await addDoc(collection(db, "VersaoTermo"), {
+      await addDoc(collection(firestore, "VersaoTermo"), {
         version: newVersion,
         terms: activeTerms,
       });
-
-      setCurrentTermVersion(newVersion);
+  
+      setCurrentTermVersion(newVersion.toString());
     } catch (error) {
       console.error("Erro ao atualizar a versão do termo:", error);
     }
   };
-
+  
   const handleDeleteUser = async (userId) => {
     try {
-      await deleteDoc(doc(db, "users", userId));
-      const blacklistRef = collection(db, "blacklist");
+      await deleteDoc(doc(firestore, "users", userId));
+      const blacklistRef = collection(firestore, "blacklist");
       await addDoc(blacklistRef, { userId, timestamp: Timestamp.now() });
       setUsers(users.filter((user) => user.id !== userId));
       await updateTermVersion();
@@ -176,7 +177,7 @@ export default function Management() {
 
   const handleDeleteRequest = async (requestId, userId) => {
     try {
-      const requestRef = doc(db, "deletionRequests", requestId);
+      const requestRef = doc(firestore, "deletionRequests", requestId);
       await updateDoc(requestRef, { userEmail: "" });
       await deleteDoc(requestRef);
       await handleDeleteUser(userId);
@@ -191,7 +192,7 @@ export default function Management() {
 
   const handleDeclineRequest = async (requestId) => {
     try {
-      const requestRef = doc(db, "deletionRequests", requestId);
+      const requestRef = doc(firestore, "deletionRequests", requestId);
       await updateDoc(requestRef, {
         status: "declined",
         userEmail: "",
@@ -206,57 +207,66 @@ export default function Management() {
 
   const handleAddNewTerm = async () => {
     try {
-      const termType =
-        selectedTermType === "new" ? newTermType : selectedTermType;
-
-      // Inactivate the previous term of the same type
-      if (selectedTermType !== "new") {
-        const termsCollection = collection(db, "terms");
-        const termsSnapshot = await getDocs(termsCollection);
-        const termsList = termsSnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-        const previousTerm = termsList.find(
-          (term) => term.type === termType && term.active
-        );
-        if (previousTerm) {
-          await updateDoc(doc(db, "terms", previousTerm.id), {
-            active: false,
-          });
-        }
-      }
-
-      await addDoc(collection(db, "terms"), {
-        type: termType,
-        version: newTermVersion,
-        content: newTermContent,
-        createdAt: Timestamp.now(),
-        active: true, // Set the new term as active
-      });
-
-      alert("Novo termo adicionado com sucesso!");
-
-      const termsCollection = collection(db, "terms");
+      const termType = selectedTermType === "new" ? newTermType : selectedTermType;
+  
+      // Check if a term with the same type and version already exists
+      const termsCollection = collection(firestore, "terms");
       const termsSnapshot = await getDocs(termsCollection);
       const termsList = termsSnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       }));
-
+      const duplicateTerm = termsList.find(
+        (term) => term.type === termType && term.version === parseInt(newTermVersion, 10)
+      );
+      if (duplicateTerm) {
+        alert("Um termo com o mesmo tipo e versão já existe.");
+        return;
+      }
+  
+      // Inactivate the previous term of the same type
+      if (selectedTermType !== "new") {
+        const previousTerm = termsList.find(
+          (term) => term.type === termType && term.active
+        );
+        if (previousTerm) {
+          await updateDoc(doc(firestore, "terms", previousTerm.id), {
+            active: false,
+          });
+        }
+      }
+  
+      // Add new term
+      await addDoc(collection(firestore, "terms"), {
+        type: termType,
+        version: parseInt(newTermVersion, 10), // Convert version to integer
+        content: newTermContent,
+        createdAt: Timestamp.now(),
+        active: true, // Set the new term as active
+      });
+  
+      alert("Novo termo adicionado com sucesso!");
+  
+      // Fetch updated terms
+      const updatedTermsSnapshot = await getDocs(termsCollection);
+      const updatedTermsList = updatedTermsSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+  
       const uniqueTermTypes = [
-        ...new Set(termsList.map((term) => term.type)),
+        ...new Set(updatedTermsList.map((term) => term.type)),
       ].map((type) => ({
         type,
         latestVersion: Math.max(
-          ...termsList
+          ...updatedTermsList
             .filter((term) => term.type === type)
-            .map((term) => parseFloat(term.version))
+            .map((term) => parseInt(term.version, 10))
         ),
       }));
-
+  
       setTermTypes(uniqueTermTypes);
-
+  
       setSelectedTermType("");
       setNewTermType("");
       setNewTermVersion("");
@@ -266,6 +276,7 @@ export default function Management() {
       console.error("Erro ao adicionar novo termo:", error);
     }
   };
+  
 
   const handleTermTypeChange = (event) => {
     const selectedType = event.target.value;
@@ -478,7 +489,7 @@ export default function Management() {
               Adicionar Novo Termo
             </Typography>
             <TextField
-              label="Tipo de Termo"
+              label="Tipo de Sub-Termo"
               variant="outlined"
               fullWidth
               margin="normal"

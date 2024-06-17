@@ -4,13 +4,12 @@ import Box from "@mui/material/Box";
 import TypingEffect from "../components/TypingFunc/Typing";
 import earthVideo from '../../public/assets/earth.mp4';
 import ConfirmationDialog from "../components/ConfirmationDialog";
-import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, updateDoc } from "firebase/firestore";
+import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, query, orderBy, limit, updateDoc } from "firebase/firestore";
 import { firestore } from "../services/firebaseConfig";
 import { AuthContext } from "../services/authContext";
 import { Button } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
 import { deleteUser } from "@firebase/auth";
-
 
 export default function Home() {
   const texts = [
@@ -18,41 +17,16 @@ export default function Home() {
     "Your platform for data analysis.",
   ];
 
-  const { currentUser } = React.useContext(AuthContext);
+  const { userData ,setUserData,currentUser } = React.useContext(AuthContext);
   const [showTermsModal, setShowTermsModal] = React.useState(false);
-  const [outdatedTerms, setOutdatedTerms] = React.useState([]);
-  const [acceptedOutdatedTerms, setAcceptedOutdatedTerms] = React.useState({});
+  const [latestTerms, setLatestTerms] = React.useState([]);
+  const [acceptedTerms, setAcceptedTerms] = React.useState({});
   const [showDeleteFieldsDialog, setShowDeleteFieldsDialog] = React.useState(false);
-
-  const handleDeleteAccount = async () => {
-    try {
-      // Adicionar documento na coleção 'blacklist'
-      await addDoc(collection(firestore, "blacklist"), {
-        userId: currentUser.uid,
-        timestamp: new Date(),
-      });
-  
-      // Excluir o documento do usuário
-      const userRef = doc(firestore, "users", currentUser.uid);
-      await deleteDoc(userRef);
-  
-      // Excluir o usuário
-      await deleteUser(currentUser);
-  
-      // Navegar para a página de login
-      navigate("/login");
-    } catch (error) {
-      console.error("Erro ao excluir a conta do usuário:", error);
-    }
-  };
   
 
   const navigate = useNavigate();
+
   React.useEffect(() => {
-
-
-
-
     async function checkTerms() {
       try {
         const userDocRef = doc(firestore, 'users', currentUser.uid);
@@ -60,28 +34,22 @@ export default function Home() {
         const userData = userDocSnapshot.data();
         const acceptedTermsList = userData.terms || [];
 
-        const termsCollection = collection(firestore, "terms");
-        const termsSnapshot = await getDocs(termsCollection);
-        const termsList = termsSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
+        // Obter a versão mais recente da coleção VersaoTermo
+        const latestVersionQuery = query(collection(firestore, "VersaoTermo"), orderBy("version", "desc"), limit(1));
+        const latestVersionSnapshot = await getDocs(latestVersionQuery);
+        const latestVersionDoc = latestVersionSnapshot.docs[0];
+        const latestVersion = latestVersionDoc.data().version;
 
+        // Obter todos os termos da versão mais recente
+        const latestTermsList = latestVersionDoc.data().terms;
 
-        const outdated = termsList.filter(term => term.active && !acceptedTermsList.some(acceptedTerm => acceptedTerm.id === term.id));
+        setLatestTerms(latestTermsList);
 
-        // Verificar se há termos desatualizados não aceitos
-        if (outdated.length > 0) {
-          setOutdatedTerms(outdated);
+        // Verificar se o usuário já aceitou a versão mais recente dos termos
+        if (!userData.version || userData.version.number !== latestVersion) {
           setShowTermsModal(true);
         } else {
-          // Verificar se todos os termos ativos foram aceitos
-          const allActiveTermsAccepted = termsList.every(term => !term.active || acceptedTermsList.some(acceptedTerm => acceptedTerm.id === term.id));
-          if (!allActiveTermsAccepted) {
-            setShowTermsModal(true);
-          } else {
-            setShowTermsModal(false); // Não mostrar o modal se todos os termos ativos foram aceitos
-          }
+          setShowTermsModal(false);
         }
       } catch (error) {
         console.error("Erro ao verificar termos:", error);
@@ -97,36 +65,63 @@ export default function Home() {
       const userDocSnapshot = await getDoc(userDocRef);
       const userData = userDocSnapshot.data();
       const currentTerms = userData.terms || [];
-
-      // Mapear todos os termos desatualizados para novos termos aceitos ou não aceitos
-      const outdatedTermsAccepted = outdatedTerms.map(term => ({
+  
+      const latestVersionQuery = query(collection(firestore, "VersaoTermo"), orderBy("version", "desc"), limit(1));
+      const latestVersionSnapshot = await getDocs(latestVersionQuery);
+      const latestVersionDoc = latestVersionSnapshot.docs[0];
+      const latestVersion = latestVersionDoc.data().version;
+      const latestTermsList = latestVersionDoc.data().terms;
+  
+      const latestTermsAccepted = latestTermsList.map(term => ({
         id: term.id,
         type: term.type,
-        version: term.version,
-        accepted: term.type === "USO" || acceptedOutdatedTerms[term.id] || false, // Tratar undefined como false
-        timestamp: new Date()
+        version: latestVersion,
+        accepted: term.type === "USO" || acceptedTerms[term.id] || false,
+        timestamp: new Date(),
       }));
-
+  
       const newAcceptedTerms = [
         ...currentTerms,
-        ...outdatedTermsAccepted
+        { version: latestVersion, terms: latestTermsAccepted },
       ];
-
-      // Atualizar documento do usuário com os novos termos aceitos
+  
       await updateDoc(userDocRef, {
-        terms: newAcceptedTerms
+        terms: newAcceptedTerms,
+        version: { number: latestVersion },
       });
-
-      // Limpar estados locais e fechar modal
-      setOutdatedTerms([]);
-      setAcceptedOutdatedTerms({});
+  
+      // Atualiza o estado local de userData com os novos dados do usuário
+      const updatedUserDocSnapshot = await getDoc(userDocRef);
+      const updatedUserData = updatedUserDocSnapshot.data();
+      setUserData(updatedUserData); // Atualiza o estado local de userData
+  
+      // Limpa os estados locais utilizados para gerenciar a aceitação de termos
+      setLatestTerms([]);
+      setAcceptedTerms({});
       setShowTermsModal(false);
-
-      // Atualizar localStorage com os IDs dos termos aceitos
+  
       const termsAccepted = newAcceptedTerms.map(term => term.id);
       localStorage.setItem('termsAccepted', JSON.stringify(termsAccepted));
     } catch (error) {
       console.error("Erro ao aceitar termos:", error);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    try {
+      await addDoc(collection(firestore, "blacklist"), {
+        userId: currentUser.uid,
+        timestamp: new Date(),
+      });
+
+      const userRef = doc(firestore, "users", currentUser.uid);
+      await deleteDoc(userRef);
+
+      await deleteUser(currentUser);
+
+      navigate("/login");
+    } catch (error) {
+      console.error("Erro ao excluir a conta do usuário:", error);
     }
   };
 
@@ -166,8 +161,6 @@ export default function Home() {
         Seu navegador não suporta o elemento de vídeo.
       </video>
 
-
-
       {showTermsModal && (
         <ConfirmationDialog
           open={showTermsModal}
@@ -192,19 +185,19 @@ export default function Home() {
                     Ver Termos
                   </Button>
                 </div>
-                {outdatedTerms.map(term => (
+                {latestTerms.map(term => (
                   <div key={term.id}>
                     {term.type === "USO" ? (
-                      <p>{term.type} - Versão {term.version}</p>
+                      <p>{term.type} - Versão {term.version} (Aceito ao Confirmar)</p>
                     ) : (
                       <label>
                         <input
                           type="checkbox"
-                          checked={acceptedOutdatedTerms[term.id] || false}
+                          checked={acceptedTerms[term.id] || false}
                           onChange={(e) => {
-                            setAcceptedOutdatedTerms({
-                              ...acceptedOutdatedTerms,
-                              [term.id]: e.target.checked
+                            setAcceptedTerms({
+                              ...acceptedTerms,
+                              [term.id]: e.target.checked,
                             });
                           }}
                         />
@@ -217,15 +210,15 @@ export default function Home() {
             </div>
           }
         />
-        
       )}
-            <ConfirmationDialog
-              open={showDeleteFieldsDialog}
-              onClose={() => setShowDeleteFieldsDialog(false)}
-              onConfirm={handleDeleteAccount}
-              title="EDIT"
-              content="Esta ação excluirá sua conta e todos os dados correnspondentes a ela, deseja confirmar?."
-            />
+
+      <ConfirmationDialog
+        open={showDeleteFieldsDialog}
+        onClose={() => setShowDeleteFieldsDialog(false)}
+        onConfirm={handleDeleteAccount}
+        title="Excluir Conta"
+        content="Esta ação excluirá sua conta e todos os dados correspondentes a ela. Deseja confirmar?"
+      />
     </Box>
   );
 }

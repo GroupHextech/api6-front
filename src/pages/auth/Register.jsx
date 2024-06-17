@@ -14,7 +14,7 @@ import Container from "@mui/material/Container";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { useCreateUserWithEmailAndPassword } from "react-firebase-hooks/auth";
 import { auth, firestore } from "../../services/firebaseConfig";
-import { doc, setDoc, collection, getDocs } from "@firebase/firestore";
+import { doc, setDoc, collection, getDocs, query, orderBy, limit } from "@firebase/firestore";
 import { useNavigate } from "react-router-dom";
 import { serverTimestamp } from "@firebase/firestore";
 
@@ -42,8 +42,6 @@ export default function Register() {
   const [password, setPassword] = useState("");
   const [confirmationPassword, setConfirmationPassword] = useState("");
   const [name, setName] = useState("");
-  const [termOfEmail, setTermOfEmail] = useState(true);
-  const [termOfSms, setTermOfSms] = useState(true);
   const [showTermsAlert, setShowTermsAlert] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState({});
   const [showSecondForm, setShowSecondForm] = useState(false);
@@ -54,6 +52,7 @@ export default function Register() {
   const [qrCode, setQRCode] = useState("");
   const [terms, setTerms] = useState([]);
   const [termsAcceptedDetails, setTermsAcceptedDetails] = useState([]);
+  const [latestVersion, setLatestVersion] = useState(""); // Estado para armazenar a versão mais recente
 
   const navigate = useNavigate();
 
@@ -64,28 +63,33 @@ export default function Register() {
     return <p>Carregando...</p>;
   }
 
-  const userCollectionRef = collection(firestore, "users");
+  useEffect(() => {
+    const fetchTerms = async () => {
+      try {
+        const termsCollection = collection(firestore, "VersaoTermo");
+        const termsQuery = query(termsCollection, orderBy("version", "desc"), limit(1));
+        const termsSnapshot = await getDocs(termsQuery);
+        const latestTerms = termsSnapshot.docs[0].data().terms;
+        const version = termsSnapshot.docs[0].data().version; // Obter a versão mais recente
 
-  async function createUser(uid) {
-    const userRef = doc(userCollectionRef, uid);
-    try {
-      await setDoc(userRef, {
-        name,
-        email,
-        jobTitle,
-        department,
-        employId,
-        phone,
-        role: "USER",
-        foto: "../../assets/user.png",
-        createdAt: serverTimestamp(),
-        terms: termsAcceptedDetails,
-      });
-      console.log("User created successfully!");
-    } catch (error) {
-      console.error("Error creating user:", error);
-    }
-  }
+        // Configurar o estado de termos aceitos
+        const initialTermsAccepted = {};
+        latestTerms.forEach(term => {
+          initialTermsAccepted[term.type] = term.type === "USO"; // Marcar USO como obrigatório
+        });
+
+        setTerms(latestTerms);
+        setTermsAccepted(initialTermsAccepted);
+        setLatestVersion(version); // Armazenar a versão mais recente no estado
+      } catch (error) {
+        console.error("Erro ao buscar os termos:", error);
+      }
+    };
+
+    fetchTerms();
+  }, []);
+
+  
 
   const handleSubmit = (event) => {
     event.preventDefault();
@@ -101,18 +105,9 @@ export default function Register() {
 
   const handleNextClick = async () => {
     if (!termsAccepted['USO']) {
-      alert("You must accept the terms of use to continue.");
+      alert("Você deve aceitar os termos de uso para continuar.");
       return;
     }
-
-    const currentTimestamp = new Date();
-    const termsDetails = terms.map(term => ({
-      type: term.type,
-      version: term.version,
-      accepted: termsAccepted[term.type] || false,
-      timestamp: currentTimestamp,
-    }));
-    setTermsAcceptedDetails(termsDetails);
 
     setShowSecondForm(true);
     try {
@@ -120,10 +115,10 @@ export default function Register() {
       if (generatedQRCode.startsWith("data:image/png;base64,")) {
         setQRCode(generatedQRCode);
       } else {
-        console.error("Error generating QR code: Invalid format");
+        console.error("Erro ao gerar o QR code: Formato inválido");
       }
     } catch (error) {
-      console.error("Error generating QR code:", error);
+      console.error("Erro ao gerar o QR code:", error);
     }
   };
 
@@ -131,57 +126,74 @@ export default function Register() {
     try {
       const verificationResult = await QRCodeService.verifyToken(email, token);
       if (verificationResult === "Verified") {
-        createUserWithEmailAndPassword(email, password)
-          .then((userCredential) => {
-            const user = userCredential.user;
-            const userUid = user.uid;
-            createUser(userUid);
-            navigate("/login");
-          })
-          .catch((error) => {
-            console.error("Error creating user:", error);
-          });
+        await registerUser();
       } else {
-        alert("Invalid token. Please enter a valid token.");
+        alert("Token inválido. Por favor, insira um token válido.");
       }
     } catch (error) {
-      console.error("Error verifying Google Authenticator code:", error);
+      console.error("Erro ao verificar o código do Google Authenticator:", error);
     }
   };
 
-  useEffect(() => {
-    const fetchTerms = async () => {
-      try {
-        const termsCollection = collection(firestore, "terms");
-        const termsSnapshot = await getDocs(termsCollection);
-        const termsList = termsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-        // Filter and get the latest version of each term type
-        const latestTerms = termsList.reduce((acc, term) => {
-          if (!acc[term.type] || acc[term.type].version < term.version) {
-            acc[term.type] = term;
-          }
-          return acc;
-        }, {});
-
-        const finalTermsList = Object.values(latestTerms);
-
-        setTerms(finalTermsList);
-        const initialTermsAccepted = {};
-        finalTermsList.forEach(term => {
-          initialTermsAccepted[term.type] = false;
-        });
-        setTermsAccepted(initialTermsAccepted);
-      } catch (error) {
-        console.error("Error fetching terms:", error);
+  const registerUser = async () => {
+    try {
+      const userCredential = await createUserWithEmailAndPassword(email, password);
+      const user = userCredential.user;
+  
+      if (user) {
+        await updateAcceptedTermsDetails(); // Atualiza os detalhes dos termos aceitos
+        await createUserDocument(user.uid); // Cria o documento do usuário
+        navigate("/login");
+      } else {
+        console.error("Erro: usuário não foi criado.");
       }
-    };
-
-    fetchTerms();
-  }, []);
-
+    } catch (error) {
+      console.error("Erro ao criar o usuário:", error);
+    }
+  };
+  
+  const updateAcceptedTermsDetails = async () => {
+    const acceptedTermsDetails = terms.map((term) => ({
+      type: term.type,
+      version: term.version,
+      accepted: termsAccepted[term.type] || false, // Verifica se o termo foi aceito, caso contrário, marca como false
+      acceptedAt: termsAccepted[term.type] ? serverTimestamp() : null, // Timestamp de aceitação se o termo foi aceito
+    }));
+  
+    setTermsAcceptedDetails(acceptedTermsDetails);
+  };
+  
+  const createUserDocument = async (uid) => {
+    const userCollectionRef = collection(firestore, "users");
+    const userRef = doc(userCollectionRef, uid);
+  
+    try {
+      await setDoc(userRef, {
+        name,
+        email,
+        jobTitle,
+        department,
+        employId,
+        phone,
+        role: "USER",
+        foto: "../../assets/user.png",
+        createdAt: serverTimestamp(),
+        version: {
+          number: latestVersion, // Utilizar a versão mais recente aqui
+          terms: terms.map(term => ({
+            type: term.type,
+            accepted: termsAccepted[term.type] || false, // Incluir se cada termo foi aceito ou não
+          })),
+        },
+      });
+      console.log("Usuário criado com sucesso!");
+    } catch (error) {
+      console.error("Erro ao criar o documento do usuário:", error);
+    }
+  };
+  
   const handleTermChange = (type, checked) => {
-    setTermsAccepted(prev => ({
+    setTermsAccepted((prev) => ({
       ...prev,
       [type]: checked,
     }));
@@ -196,7 +208,8 @@ export default function Register() {
           xs={12}
           sx={{
             height: { md: "50vh", sm: "33vh", xs: "33vh" },
-            background: "linear-gradient(to right, rgba(0,0,0,1) 25%, rgba(0,0,255,0.5) 100%)",
+            background:
+              "linear-gradient(to right, rgba(0,0,0,1) 25%, rgba(0,0,255,0.5) 100%)",
           }}
         >
           <Grid container sx={{ height: "50%" }}>
@@ -218,7 +231,7 @@ export default function Register() {
                 variant="h2"
                 sx={{ color: "white", fontWeight: "bold" }}
               >
-                Hello! It's great to meet you.
+                Olá! É um prazer conhecê-lo.
               </Typography>
             </Grid>
             <Grid
@@ -264,15 +277,28 @@ export default function Register() {
                   >
                     {!showSecondForm ? (
                       <Box>
-                        <div style={{ width: "100%", justifyContent: "center", display: "flex" }}>
-                          <img src="../../assets/dino-icon.svg" width={"80px"} />
+                        <div
+                          style={{
+                            width: "100%",
+                            justifyContent: "center",
+                            display: "flex",
+                          }}
+                        >
+                          <img
+                            src="../../assets/dino-icon.svg"
+                            width={"80px"}
+                            alt="Dino Icon"
+                          />
                         </div>
                         <Typography
                           component="h1"
                           variant="h5"
-                          sx={{ justifyContent: "center", display: "flex" }}
+                          sx={{
+                            justifyContent: "center",
+                            display: "flex",
+                          }}
                         >
-                          Create Account
+                          Criar Conta
                         </Typography>
                         <Box
                           component="form"
@@ -286,7 +312,7 @@ export default function Register() {
                                 required
                                 fullWidth
                                 id="name"
-                                label="Name"
+                                label="Nome"
                                 name="name"
                                 autoComplete="name"
                                 onChange={(e) => setName(e.target.value)}
@@ -298,7 +324,7 @@ export default function Register() {
                                 required
                                 fullWidth
                                 id="employId"
-                                label="Registration Number"
+                                label="Número de Registro"
                                 name="employId"
                                 autoComplete="employId"
                                 onChange={(e) => setEmployId(e.target.value)}
@@ -310,7 +336,7 @@ export default function Register() {
                                 required
                                 fullWidth
                                 id="department"
-                                label="Department"
+                                label="Departamento"
                                 name="department"
                                 onChange={(e) => setDepartment(e.target.value)}
                               />
@@ -321,7 +347,7 @@ export default function Register() {
                                 required
                                 fullWidth
                                 id="jobTitle"
-                                label="Title"
+                                label="Título"
                                 name="jobTitle"
                                 autoComplete="jobTitle"
                                 onChange={(e) => setJobTitle(e.target.value)}
@@ -333,7 +359,7 @@ export default function Register() {
                                 required
                                 fullWidth
                                 id="email"
-                                label="Email Address"
+                                label="Endereço de Email"
                                 name="email"
                                 autoComplete="email"
                                 onChange={(e) => setEmail(e.target.value)}
@@ -345,7 +371,7 @@ export default function Register() {
                                 required
                                 fullWidth
                                 id="phone"
-                                label="Phone Number"
+                                label="Número de Telefone"
                                 name="phone"
                                 autoComplete="phone"
                                 onChange={(e) => setPhone(e.target.value)}
@@ -357,7 +383,7 @@ export default function Register() {
                                 required
                                 fullWidth
                                 name="password"
-                                label="Password"
+                                label="Senha"
                                 type="password"
                                 id="password"
                                 autoComplete="new-password"
@@ -370,11 +396,13 @@ export default function Register() {
                                 required
                                 fullWidth
                                 name="confirmationPassword"
-                                label="Confirm Password"
+                                label="Confirmar Senha"
                                 type="password"
                                 id="confirmationPassword"
                                 autoComplete="new-password"
-                                onChange={(e) => setConfirmationPassword(e.target.value)}
+                                onChange={(e) =>
+                                  setConfirmationPassword(e.target.value)
+                                }
                               />
                             </Grid>
 
@@ -385,7 +413,7 @@ export default function Register() {
                                 color="primary"
                                 onClick={handleSignUpClick}
                               >
-                                Read the terms of use
+                                Ler os termos de uso
                               </Button>
                             </Grid>
 
@@ -396,10 +424,15 @@ export default function Register() {
                                     <Checkbox
                                       color="primary"
                                       checked={termsAccepted[term.type]}
-                                      onChange={(e) => handleTermChange(term.type, e.target.checked)}
+                                      onChange={(e) =>
+                                        handleTermChange(
+                                          term.type,
+                                          e.target.checked
+                                        )
+                                      }
                                     />
                                   }
-                                  label={`I accept the ${term.type} terms`}
+                                  label={`Aceito os termos de ${term.type}`}
                                 />
                               </Grid>
                             ))}
@@ -409,15 +442,15 @@ export default function Register() {
                               fullWidth
                               variant="contained"
                               sx={{ mt: 3, mb: 2 }}
-                              disabled={!termsAccepted['USO']}
+                              disabled={!termsAccepted["USO"]}
                               onClick={handleNextClick}
                             >
-                              Next
+                              Próximo
                             </Button>
                             <Grid container justifyContent="flex-end">
                               <Grid item>
                                 <Link href="/login" variant="body2">
-                                  Already have an account? Sign in
+                                  Já tem uma conta? Faça login
                                 </Link>
                               </Grid>
                             </Grid>
@@ -429,9 +462,12 @@ export default function Register() {
                         <Typography
                           component="h1"
                           variant="h5"
-                          sx={{ justifyContent: "center", display: "flex" }}
+                          sx={{
+                            justifyContent: "center",
+                            display: "flex",
+                          }}
                         >
-                          Verify QR Code
+                          Verificar QR Code
                         </Typography>
                         <Box
                           component="form"
@@ -442,11 +478,27 @@ export default function Register() {
                           <Grid container spacing={1}>
                             <Grid item xs={12}>
                               {qrCode && (
-                                <div style={{ textAlign: "center", margin: "5px 0" }}>
-                                  <Button variant="outlined" disableElevation href="https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2&hl=pt_BR&gl=US">
-                                    Download Google Authenticator
+                                <div
+                                  style={{
+                                    textAlign: "center",
+                                    margin: "5px 0",
+                                  }}
+                                >
+                                  <Button
+                                    variant="outlined"
+                                    disableElevation
+                                    href="https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2&hl=pt_BR&gl=US"
+                                  >
+                                    Baixar Google Authenticator
                                   </Button>
-                                  <img src={qrCode} alt="QR Code" style={{ maxWidth: "100%", height: "auto" }}/>
+                                  <img
+                                    src={qrCode}
+                                    alt="QR Code"
+                                    style={{
+                                      maxWidth: "100%",
+                                      height: "auto",
+                                    }}
+                                  />
                                 </div>
                               )}
                             </Grid>
@@ -470,7 +522,7 @@ export default function Register() {
                             sx={{ mt: 3, mb: 2 }}
                             onClick={() => handleVerifyToken(token)}
                           >
-                            Finish
+                            Finalizar
                           </Button>
                         </Box>
                       </Box>

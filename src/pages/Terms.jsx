@@ -18,9 +18,12 @@ export default function TermosAtualizados() {
           ...doc.data()
         }));
 
+        // Filtrar termos apenas do tipo "USO"
+        const termosFiltrados = termsList.filter(term => term.type === "USO");
+
         // Agrupar termos por tipo e encontrar o mais recente de cada tipo
         const termosMaisRecentes = {};
-        termsList.forEach(term => {
+        termosFiltrados.forEach(term => {
           if (!termosMaisRecentes[term.type] || termosMaisRecentes[term.type].version < term.version) {
             termosMaisRecentes[term.type] = term;
           }
@@ -73,9 +76,8 @@ export default function TermosAtualizados() {
           onClick={() => handleToggleContent(termo.id)}
         >
           <div>Termo de {termo.type}</div>
-          <div>Versão: {termo.version}</div>
           {showContent[termo.id] && (
-            <div>Conteúdo: {termo.content}</div>
+            <div>{termo.content}</div>
           )}
         </Paper>
       ))}
