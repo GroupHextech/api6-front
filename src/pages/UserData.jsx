@@ -4,13 +4,11 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Checkbox from "@mui/material/Checkbox";
 import FormControlLabel from "@mui/material/FormControlLabel";
-import { updateDoc, doc, deleteDoc, collection, addDoc } from "firebase/firestore";
-import { firestore, storage } from "../services/firebaseConfig";
+import { updateDoc, doc, addDoc, collection, deleteDoc } from "firebase/firestore";
+import { firestore } from "../services/firebaseConfig";
 import ConfirmationDialog from "../components/ConfirmationDialog";
 import { AuthContext } from "../services/authContext";
 import { useNavigate } from "react-router-dom";
-import { getDownloadURL, ref } from "firebase/storage";
-import TypingEffect from "../components/TypingFunc/Typing";
 import { deleteUser } from "@firebase/auth";
 
 export default function UserData() {
@@ -19,106 +17,55 @@ export default function UserData() {
   const [termsToUpdate, setTermsToUpdate] = useState([]);
   const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
   const [showDeleteFieldsDialog, setShowDeleteFieldsDialog] = useState(false);
-  const [audio, setAudio] = useState(null);
-  const [musicUrl, setMusicUrl] = useState(null);
-
-  const texts = ["Obrigado Mineda"];
+  
   const navigate = useNavigate();
 
-  useEffect(() => {
-    setLatestTerms(userData.terms || []);
-  }, [userData]);
+
 
   useEffect(() => {
-    if (userData.name === "Mineda") {
-      playMusicFromStorage();
-    }
-  }, [userData]);
-
-  const playMusicFromStorage = async () => {
-    try {
-      const musicStorageRef = ref(storage, 'musica.mp3');
-      const url = await getDownloadURL(musicStorageRef);
-      setMusicUrl(url);
-    } catch (error) {
-      console.error("Erro ao reproduzir a música:", error);
-    }
-  };
-
-  const handleCheckboxChange = (termType, accepted, version) => {
-    const updatedTerms = latestTerms.map(term => {
-      if (term.type === termType) {
-        return { ...term, accepted };
+    const loadUserData = async () => {
+      if (userData && userData.terms && userData.terms.length) {
+        const sortedTerms = getLatestTerms(userData.terms);
+        setLatestTerms(sortedTerms);
+        // Initialize termsToUpdate with current user terms
+        setTermsToUpdate(sortedTerms.map(term => ({ type: term.type, accepted: term.accepted })));
       }
-      return term;
+    };
+  
+    if (userData) {
+      loadUserData();
+    }
+  }, [userData]);
+
+  const getLatestTerms = (termsArray) => {
+    if (!termsArray || termsArray.length === 0) {
+      return [];
+    }
+  
+    const sortedTerms = [...termsArray].sort((a, b) => {
+      if (a.type === "USO") return -1;
+      if (b.type === "USO") return 1;
+      return 0;
     });
-    setLatestTerms(updatedTerms);
-
-    const updatedTermsToUpdate = termsToUpdate.filter(term => term.type !== termType);
-    updatedTermsToUpdate.push({ type: termType, accepted, version });
-    setTermsToUpdate(updatedTermsToUpdate);
+  
+    const latestTermsObject = sortedTerms.reduce((latest, current) => (
+      parseInt(current.version) > parseInt(latest.version) ? current : latest
+    ));
+  
+    return latestTermsObject.terms.map(term => ({
+      ...term,
+      type: term.type,
+      externalVersion: latestTermsObject.version
+    }));
   };
 
-  const handleShowConfirmation = () => {
-    setShowConfirmationDialog(true);
-  };
-
-  const handleShowExclude = () => {
-    setShowDeleteFieldsDialog(true);
-  };
-
-  const handleSaveChanges = async () => {
-    try {
-      const userRef = doc(firestore, "users", currentUser.uid);
-      await updateDoc(userRef, {
-        terms: latestTerms.map(term => ({
-          ...term,
-          accepted: termsToUpdate.find(t => t.type === term.type)?.accepted || term.accepted,
-          timestamp: new Date(),
-        }))
-      });
-      alert("Alterações salvas com sucesso!");
-      setTermsToUpdate([]);
-    } catch (error) {
-      console.error("Erro ao salvar alterações:", error);
-    }
-  };
-
-  const handleDeleteRequest = async () => {
-    try {
-      await addDoc(collection(firestore, "deletionRequests"), {
-        userId: currentUser.uid,
-        userName: userData.name,
-        userEmail: currentUser.email,
-        requestedAt: new Date(),
-        status: "pending",
-      });
-      setShowConfirmationDialog(false);
-      alert("Solicitação de exclusão enviada ao administrador.");
-    } catch (error) {
-      console.error("Erro ao enviar solicitação de exclusão:", error);
-    }
-  };
-
-  const handleDeleteFields = async () => {
-    try {
-      const userRef = doc(firestore, "users", currentUser.uid);
-      await updateDoc(userRef, {
-        phone: "",
-        name: "inactive",
-      });
-      await addDoc(collection(firestore, "deletionRequests"), {
-        userId: currentUser.uid,
-        userName: userData.name,
-        userEmail: currentUser.email,
-        requestedAt: new Date(),
-        status: "pending",
-      });
-      setShowDeleteFieldsDialog(false);
-      alert("Solicitação de exclusão de campos enviada ao administrador.");
-    } catch (error) {
-      console.error("Erro ao excluir campos e enviar solicitação:", error);
-    }
+  const handleCheckboxChange = (termType, accepted) => {
+    // Atualiza o estado local termsToUpdate com a alteração do checkbox
+    setTermsToUpdate(prevTerms =>
+      prevTerms.map(term =>
+        term.type === termType ? { ...term, accepted } : term
+      )
+    );
   };
 
   const handleDeleteAccount = async () => {
@@ -142,27 +89,37 @@ export default function UserData() {
       console.error("Erro ao excluir a conta do usuário:", error);
     }
   };
-  
 
-  // Filtrar os termos mais recentes por tipo (type)
-  const filterLatestTermsByType = () => {
-    const filteredTerms = latestTerms.reduce((acc, term) => {
-      const existingTerm = acc.find(t => t.type === term.type);
-      if (!existingTerm) {
-        acc.push(term);
-      } else {
-        if (term.version > existingTerm.version) {
-          acc = acc.filter(t => t.type !== term.type);
-          acc.push(term);
-        }
-      }
-      return acc;
-    }, []);
-    return filteredTerms;
+  const handleSaveChanges = async () => {
+    try {
+      const updatedTerms = latestTerms.map(term => {
+        const updatedTerm = termsToUpdate.find(t => t.type === term.type);
+        return {
+          ...term,
+          accepted: updatedTerm.accepted,
+          timestamp: new Date(),
+        };
+      });
+
+      const userRef = doc(firestore, "users", currentUser.uid);
+      await updateDoc(userRef, {
+        terms: updatedTerms,
+      });
+
+      alert("Alterações salvas com sucesso!");
+    } catch (error) {
+      console.error("Erro ao salvar alterações:", error);
+      alert("Erro ao salvar alterações. Por favor, tente novamente mais tarde.");
+    }
   };
 
-  // Obter os termos mais recentes por tipo (type)
-  const latestTermsFiltered = filterLatestTermsByType();
+
+  const handleShowExclude = () => {
+    setShowDeleteFieldsDialog(true);
+  };
+
+
+
 
   return (
     <Box>
@@ -242,48 +199,50 @@ export default function UserData() {
             </Paper>
 
             <Paper style={{ padding: 4, display: "flex", justifyContent: "space-between", width: "40%" }}>
-              <div>User Role :</div>
+              <div>Role :</div>
               <div>{userData.role}</div>
             </Paper>
 
-            {latestTermsFiltered.map(term => (
+            {[
+              ...latestTerms.filter(term => term.type === "USO"),
+              ...latestTerms.filter(term => term.type !== "USO")
+            ].map((term) => (
               <Paper key={term.type} style={{ padding: 4, display: "flex", justifyContent: "space-between", width: "40%" }}>
-                <div>Termo de {term.type} :</div>
-                <div>Versão: {term.version}</div>
-                <div>
-                  {term.type === "USO" ? (
+                <div>{term.type === "USO" ? `Termo de USO - Versão: ${term.externalVersion}` : `Termo de ${term.type}`}</div>
+                {term.type === "USO" ? (
                     <Button
-                      variant="contained"
-                      color="primary"
-                      onClick={handleShowExclude}
-                    >
-                      Rejeitar
-                    </Button>
-                  ) : (
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          checked={term.accepted}
-                          onChange={(event) => handleCheckboxChange(term.type, event.target.checked, term.version)}
-                          color="primary"
-                        />
-                      }
-                      label={term.accepted ? 'Aceito' : 'Não Aceito'}
-                    />
-                  )}
-                </div>
+                    variant="contained"
+                    color="primary"
+                    onClick={handleShowExclude}
+                  >
+                    Rejeitar
+                  </Button>
+                ) : (
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={termsToUpdate.find(t => t.type === term.type)?.accepted || false}
+                        onChange={(event) => handleCheckboxChange(term.type, event.target.checked)}
+                        color="primary"
+                      />
+                    }
+                    label={termsToUpdate.find(t => t.type === term.type)?.accepted ? 'Aceito' : 'Não Aceito'}
+                  />
+                )}
               </Paper>
             ))}
 
+            {/* Botão Salvar Alterações */}
             <Paper style={{ padding: 4, display: "flex", justifyContent: "center", width: "40%" }}>
               <Button
                 variant="contained"
                 color="primary"
                 onClick={handleSaveChanges}
               >
-                Save Changes
+                Salvar Alterações
               </Button>
             </Paper>
+
 
             <Paper style={{ padding: 4, display: "flex", justifyContent: "center", width: "40%" }}>
               <Button
@@ -291,15 +250,15 @@ export default function UserData() {
                 color="error"
                 onClick={() => setShowConfirmationDialog(true)}
               >
-                Delete Account
+                Deletar Conta
               </Button>
             </Paper>
 
             <ConfirmationDialog
               open={showConfirmationDialog}
               onClose={() => setShowConfirmationDialog(false)}
-              onConfirm={handleDeleteRequest}
-              title="Delete account"
+              onConfirm={handleDeleteAccount}
+              title="Deletar Conta"
               content="Esta ação enviará uma solicitação de exclusão de sua conta para o administrador. Você será notificado quando a solicitação for processada."
             />
 
@@ -307,8 +266,8 @@ export default function UserData() {
               open={showDeleteFieldsDialog}
               onClose={() => setShowDeleteFieldsDialog(false)}
               onConfirm={handleDeleteAccount}
-              title="EDIT"
-              content="Esta ação excluirá sua conta e todos os dados correnspondentes a ela, deseja confirmar?."
+              title="Reijeitar os Termos de Uso"
+              content="Você tem certeza? Esta ação excluirá todos os dados e sua conta. Deseja confirmar?"
             />
           </Paper>
         </div>
