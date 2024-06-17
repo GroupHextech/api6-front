@@ -20,10 +20,13 @@ import {
   updateDoc,
   addDoc,
   Timestamp,
+  query,
+  orderBy,
+  limit,
 } from "firebase/firestore";
 import { getFirestore } from "firebase/firestore";
 import Header from "../components/Header";
-import { getAuth, deleteUser } from "firebase/auth";
+import { getAuth } from "firebase/auth";
 
 const db = getFirestore();
 const auth = getAuth();
@@ -46,6 +49,7 @@ export default function Management() {
   const [newTermType, setNewTermType] = useState("");
   const [newTermVersion, setNewTermVersion] = useState("");
   const [newTermContent, setNewTermContent] = useState("");
+  const [currentTermVersion, setCurrentTermVersion] = useState("");
 
   const [selectedDate, setSelectedDate] = useState(dayjs());
   const today = dayjs();
@@ -102,6 +106,16 @@ export default function Management() {
         }));
 
         setTermTypes(uniqueTermTypes);
+
+        // Fetch current term version
+        const versionQuery = query(
+          collection(db, "VersaoTermo"),
+          orderBy("version", "desc"),
+          limit(1)
+        );
+        const versionSnapshot = await getDocs(versionQuery);
+        const latestVersion = versionSnapshot.docs[0]?.data().version || "1.0";
+        setCurrentTermVersion(latestVersion);
       } catch (error) {
         console.error("Erro ao buscar dados:", error);
       }
@@ -110,12 +124,51 @@ export default function Management() {
     fetchData();
   }, []);
 
+  const updateTermVersion = async () => {
+    try {
+      const versionQuery = query(
+        collection(db, "VersaoTermo"),
+        orderBy("version", "desc"),
+        limit(1)
+      );
+      const versionSnapshot = await getDocs(versionQuery);
+      const latestVersionDoc = versionSnapshot.docs[0];
+      let newVersion = "1.0";
+
+      if (latestVersionDoc) {
+        const latestVersion = parseFloat(latestVersionDoc.data().version);
+        newVersion = (latestVersion + 0.1).toFixed(1);
+      }
+
+      // Fetch all active terms
+      const termsCollection = collection(db, "terms");
+      const termsSnapshot = await getDocs(termsCollection);
+      const activeTerms = termsSnapshot.docs
+        .map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }))
+        .filter((term) => term.active);
+
+      // Create a new version document with the new version and active terms
+      await addDoc(collection(db, "VersaoTermo"), {
+        version: newVersion,
+        terms: activeTerms,
+      });
+
+      setCurrentTermVersion(newVersion);
+    } catch (error) {
+      console.error("Erro ao atualizar a versão do termo:", error);
+    }
+  };
+
   const handleDeleteUser = async (userId) => {
     try {
       await deleteDoc(doc(db, "users", userId));
       const blacklistRef = collection(db, "blacklist");
       await addDoc(blacklistRef, { userId, timestamp: Timestamp.now() });
       setUsers(users.filter((user) => user.id !== userId));
+      await updateTermVersion();
     } catch (error) {
       console.error("Error deleting user:", error);
     }
@@ -130,6 +183,7 @@ export default function Management() {
       setDeletionRequests(
         deletionRequests.filter((request) => request.id !== requestId)
       );
+      await updateTermVersion();
     } catch (error) {
       console.error("Error deleting request:", error);
     }
@@ -207,6 +261,7 @@ export default function Management() {
       setNewTermType("");
       setNewTermVersion("");
       setNewTermContent("");
+      await updateTermVersion();
     } catch (error) {
       console.error("Erro ao adicionar novo termo:", error);
     }
@@ -260,6 +315,7 @@ export default function Management() {
       }));
 
       setTermTypes(uniqueTermTypes);
+      await updateTermVersion();
     } catch (error) {
       console.error("Erro ao inativar termo:", error);
     }
@@ -283,6 +339,8 @@ export default function Management() {
             <Header title="Management" />
           </Box>
         </Box>
+
+
 
         <div style={{ display: "flex", flexDirection: "row" }}>
           <Box
@@ -413,6 +471,9 @@ export default function Management() {
               marginLeft: 3,
             }}
           >
+            <Typography variant="h3" gutterBottom>
+              Versão do Termo: {currentTermVersion}
+            </Typography>
             <Typography variant="h6" gutterBottom>
               Adicionar Novo Termo
             </Typography>
@@ -473,7 +534,7 @@ export default function Management() {
             </Typography>
             {termTypes.map((term) => (
               <Box
-                key={term.id}
+                key={term.type}
                 display="flex"
                 justifyContent="space-between"
                 alignItems="center"
