@@ -1,5 +1,5 @@
-import { Box, IconButton, useTheme } from "@mui/material";
-import { useContext } from "react";
+import { Badge, Box, IconButton, Popover, Typography, useTheme } from "@mui/material";
+import { useContext, useRef, useState } from "react";
 import { ColorModeContext, tokens } from "../../theme";
 import InputBase from "@mui/material/InputBase";
 import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
@@ -12,15 +12,20 @@ import LoginOutlinedIcon from '@mui/icons-material/LoginOutlined';
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../services/authContext";
 import { getAuth, signOut } from "firebase/auth";
+import { NotificationContext } from "../../NotificationContext";
 
 
 
 const Topbar = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
+
   const colorMode = useContext(ColorModeContext);
   const { setAuthenticated, setUserData } = useContext(AuthContext);
+  const { notifications, setNotifications } = useContext(NotificationContext);
 
+  const [isNotificationOpen, setNotificationOpen] = useState(false);
+  const [anchorEl, setAnchorEl] = useState(null);
 
   const navigate = useNavigate();
 
@@ -38,6 +43,25 @@ const Topbar = () => {
   const dataNavigation = () => {
     navigate("/userData")
   }
+
+  const handleToggleNotifications = (event) => {
+    if (notifications.length === 0) return
+    
+    setAnchorEl(event.currentTarget);
+    setNotificationOpen(!isNotificationOpen);
+
+    // notificações está aberta? e o click é para fechar? entao limpa as notificações
+    if (isNotificationOpen) {
+      setNotifications([]);
+    }
+  }
+
+  const handleCloseNotifications = () => {
+    setAnchorEl(null);
+    setNotificationOpen(false);
+    setNotifications([]);
+  }
+
   return (
     <Box display="flex" justifyContent="space-between" p={2}>
       {/* SEARCH BAR */}
@@ -61,9 +85,22 @@ const Topbar = () => {
             <LightModeOutlinedIcon />
           )}
         </IconButton>
-        <IconButton>
-          <NotificationsOutlinedIcon />
+        <IconButton onClick={handleToggleNotifications}>
+          <Badge badgeContent={notifications.length} color="error">
+            <NotificationsOutlinedIcon />
+          </Badge>
         </IconButton>
+        <Popover
+          open={isNotificationOpen}
+          anchorEl={anchorEl}
+          onClose={handleCloseNotifications}
+          anchorOrigin={{
+            vertical: 'bottom',
+            horizontal: 'left',
+          }}
+        >
+          {notifications.map(n => <Typography sx={{ p: 2 }}>{n.msg}</Typography>)}
+        </Popover>
         <IconButton>
           <SettingsOutlinedIcon />
         </IconButton>

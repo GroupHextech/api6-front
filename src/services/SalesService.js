@@ -1,7 +1,8 @@
 // const API_URL = "http://3.140.192.18:8000"
 // const API_URL = "http://127.0.0.1:5000"
-const API_URL = "https://api6.nossoscursos.com.br/"
+const API_URL = "https://api6.nossoscursos.com.br"
 const API_URL_PREFIX = "api"
+const API_USERS_PREFIX = "users"
 
 export async function getTopWords(states, regions, feeling) {
   try {     
@@ -25,8 +26,6 @@ export async function getTopWords(states, regions, feeling) {
     throw new Error(error.message);
   }
 }
-
-
 
 export async function getGender(states, regions, feeling) {
   try {
@@ -132,4 +131,31 @@ function getFilterParams(states, regions, feeling) {
   }
 
   return '?' + params.join('&');
+}
+
+export async function handleRestore(selectedDate) {
+  try {
+    const year = selectedDate.format("YYYY");
+    const month = selectedDate.format("MM");
+    const day = selectedDate.format("DD");
+    
+    // Construção da URL do API endpoint com a data selecionada
+    const url = `${API_URL}/${API_USERS_PREFIX}/restore?year=${year}&month=${month}&day=${day}`;
+
+    const response = await fetch(url, {
+      method: "GET", // Use GET for retrieving backup data
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to restore backup for date ${day}/${month}/${year}`);
+    }
+
+    const data = await response.json();
+    console.log("Restore response:", data.document);
+  } catch (error) {
+    console.error("Error restoring backup", error);
+  }
 }

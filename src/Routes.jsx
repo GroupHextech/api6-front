@@ -13,6 +13,8 @@ import UserData from "./pages/UserData";
 import Manegement from "./pages/Manegement";
 import { AuthProvider } from "./services/authContext";
 import PrivateRoute from "./components/PrivateRoute";
+import Termos from "./pages/Terms"
+import {NotificationContext} from "./NotificationContext"
 
 export default function AppRoutes() {
   const [theme, colorMode] = useMode();
@@ -21,31 +23,39 @@ export default function AppRoutes() {
   const location = useLocation();
   const isLoginPage = location.pathname === "/login";
   const isRegisterPage = location.pathname === "/register";
+  const isTermPage = location.pathname === "/termos"
+
+  const [notifications, setNotifications] = useState([]);
+  const notificationContextProvider = { notifications, setNotifications };
 
   return (
     <AuthProvider>
       <ColorModeContext.Provider value={colorMode}>
-        <ThemeProvider theme={theme}>
-          <CssBaseline />
-          <div className="app">
-            {!isLoginPage && !isRegisterPage && <Sidebar isSidebar={isSidebar} />}
-            <main className="content" style={{ overflowY: 'scroll' }}>
-              {!isLoginPage && !isRegisterPage && <Topbar setIsSidebar={setIsSidebar} />}
-              <Routes>
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
-                <Route element={<PrivateRoute />}>
-                  <Route path="/" element={<Home />} />
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/map" element={<Map />} />
-                  <Route path="/userData" element={<UserData />} />
-                  <Route path="/manege" element={<Manegement />} />
-                </Route>
-                {/* Adicione outras rotas aqui */}
-              </Routes>
-            </main>
-          </div>
-        </ThemeProvider>
+        <NotificationContext.Provider value={notificationContextProvider}>
+          <ThemeProvider theme={theme}>
+            <CssBaseline />
+            <div className="app">
+              {!isLoginPage && !isRegisterPage && !isTermPage && <Sidebar isSidebar={isSidebar} />}
+              <main className="content" style={{ overflowY: 'scroll' }}>
+                {!isLoginPage && !isRegisterPage && !isTermPage &&<Topbar setIsSidebar={setIsSidebar} />}
+
+                <Routes>
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/register" element={<Register />} />
+                  <Route element={<PrivateRoute />}>
+                    <Route path="/" element={<Home />} />
+                    <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/map" element={<Map />} />
+                    <Route path="/userData" element={<UserData />} />
+                    <Route path="/manege" element={<Manegement />} />
+                    <Route path="/termos" element={<Termos />} />
+                  </Route>
+                  {/* Adicione outras rotas aqui */}
+                </Routes>
+              </main>
+            </div>
+          </ThemeProvider>
+        </NotificationContext.Provider>  
       </ColorModeContext.Provider>
     </AuthProvider>
   );
