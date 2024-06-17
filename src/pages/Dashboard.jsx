@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useContext } from "react";
 import { TagCloud } from 'react-tagcloud'
 
 import {
@@ -45,6 +45,7 @@ import { getFeeling } from "../services/SalesService";
 import { getTopWords } from "../services/SalesService";
 import { saveAs } from 'file-saver';
 import { uploadCsvFile } from "../services/csvService";
+import { NotificationContext } from "../NotificationContext";
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -82,6 +83,8 @@ const Dashboard = () => {
   const sentimentByMonthRef = useRef(null);
   const reviewsByCategoryRef = useRef(null);
   const topWordsRef = useRef(null);
+
+  const {notifications, setNotifications} = useContext(NotificationContext);
 
   const handleClearFilters = () => {
     setSelectedRegions([]);
@@ -337,7 +340,6 @@ const Dashboard = () => {
       try {
         const topWordsData = await getTopWords(states, regions, feeling);
         setTopWordsData(topWordsData);
-        console.log('abacate');
         console.log(topWordsData);
       } catch (error) {
         console.error("Error fetching top words:", error.message);
@@ -356,7 +358,11 @@ const Dashboard = () => {
 
     uploadCsvFile(file, callback);
 
-    setAlert({status: 'info', msg: 'File uploaded, awaiting process to finish. This will take a while...'})
+    setAlert({status: "info", msg: 'File uploaded, awaiting process to finish. This will take a while...'})
+
+    // para aparecer no sininho
+    let notification = {status: 'success', msg: 'File uploaded, waiting processing'};
+    setNotifications([...notifications, notification])
 
     setTimeout(() => {
       setAlert({})
@@ -371,12 +377,19 @@ const Dashboard = () => {
     if (status) {
       setIsLoading(false)
 
+      let notification;
       if (status === 200) {
-        setAlert({status: 'success', msg: 'File uploaded successfuly'})
+        notification = {status: 'success', msg: 'File processed successfuly'};
+
+        setAlert(notification)
+        setNotifications([...notifications, notification])
       } else {
         // delay forçado para erros, pois nesse caso estamos evitando uma notificação "info" e "erro" ao mesmo tempo
+        notification = {status: 'error', msg: 'Failed to upload file'};
+
         await delay(6000)
-        setAlert({status: 'error', msg: 'Failed to upload file'})
+        setAlert(notification)
+        setNotifications([...notifications, notification])
       }
 
       setTimeout(() => {
@@ -387,7 +400,7 @@ const Dashboard = () => {
 
   return (
     <>
-      {alert?.status ? <Alert variant="filled" severity={alert.status}>{alert.msg}</Alert> : <></> }
+      {alert?.status ? <Alert variant="outlined" severity={alert.status}>{alert.msg}</Alert> : <></> }
 
       <Box m="20px">
         {/* HEADER */}
@@ -411,11 +424,12 @@ const Dashboard = () => {
               tabIndex={-1}
               startIcon={<CloudUploadIcon />}
               onChange={handleCSVUpload}
+              disabled={isLoading}
             >
               Upload 
-              <Box sx={{ display: 'flex' }}>
+              <Box sx={{ display: 'flex'}}>
               {isLoading ? (
-                <CircularProgress size={30} />
+                <CircularProgress size={30} sx={{ display: 'flex', marginLeft: '16px' }}/>
                 ) : (
                   <></>
                 )}
