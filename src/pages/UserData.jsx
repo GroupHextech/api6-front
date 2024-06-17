@@ -68,7 +68,23 @@ export default function UserData() {
     );
   };
 
-  const handleDeleteAccount = async () => {
+  const handleDeleteRequest = async () => {
+    try {
+      await addDoc(collection(firestore, "deletionRequests"), {
+        userId: currentUser.uid,
+        userName: userData.name,
+        userEmail: currentUser.email,
+        requestedAt: new Date(),
+        status: "pending",
+      });
+      setShowConfirmationDialog(false);
+      alert("Solicitação de exclusão enviada ao administrador.");
+    } catch (error) {
+      console.error("Erro ao enviar solicitação de exclusão:", error);
+    }
+  };
+
+  const handleDeleteFields = async () => {
     try {
       // Adicionar documento na coleção 'blacklist'
       await addDoc(collection(firestore, "blacklist"), {
@@ -86,7 +102,7 @@ export default function UserData() {
       // Navegar para a página de login
       navigate("/login");
     } catch (error) {
-      console.error("Erro ao excluir a conta do usuário:", error);
+      console.error("Erro ao excluir campos e enviar solicitação:", error);
     }
   };
 
@@ -248,7 +264,7 @@ export default function UserData() {
               <Button
                 variant="contained"
                 color="error"
-                onClick={() => setShowConfirmationDialog(true)}
+                onClick={() => setShowDeleteFieldsDialog(true)}
               >
                 Deletar Conta
               </Button>

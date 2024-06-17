@@ -342,6 +342,7 @@ export default function Management() {
         style={{ flex: 0.8, display: "flex", flexDirection: "column", gap: 10 }}
       >
         <Box m="20px">
+          {/* HEADER */}
           <Box
             display="flex"
             justifyContent="space-between"
@@ -351,8 +352,7 @@ export default function Management() {
           </Box>
         </Box>
 
-
-
+        {/* CONTENT */}
         <div style={{ display: "flex", flexDirection: "row" }}>
           <Box
             gridColumn="span 3"

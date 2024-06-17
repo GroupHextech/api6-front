@@ -205,7 +205,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     async function handleFeelingData() {
-      let feelingData;
+      let feelingData; 
 
       let regions = [];
       let states = [];
@@ -398,6 +398,37 @@ const Dashboard = () => {
     }
   }
 
+  useEffect(() => {
+    async function fetchDataTopWords() {
+      let regions = [];
+      let states = [];
+      let feeling = "";
+
+      if (selectedRegions.includes("Todas")) {
+        regions = [];
+      } else if (selectedRegions.length) {
+        regions = selectedRegions;
+      }
+	  
+	    if (!regions.length) {
+        states = selectedStates.map((state) => getAbbreviation(state));
+      }
+	  
+	    feeling = selectedSentiment;
+  
+      try {
+        const topWordsData = await getTopWords(states, regions, feeling);
+        setTopWordsData(topWordsData);
+        console.log('abacate');
+        console.log(topWordsData);
+      } catch (error) {
+        console.error("Error fetching top words:", error.message);
+      }
+    }
+
+    fetchDataTopWords();
+  }, [selectedRegions, selectedStates, selectedSentiment]);
+  
   return (
     <>
       {alert?.status ? <Alert variant="outlined" severity={alert.status}>{alert.msg}</Alert> : <></> }
