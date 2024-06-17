@@ -27,33 +27,6 @@ export async function getTopWords(states, regions, feeling) {
   }
 }
 
-
-
-export async function getTopWords(states, regions, feeling) {
-  try {     
-    let params = getFilterParams(states, regions, feeling);
- 
-    const response = await fetch(`${API_URL}/${API_URL_PREFIX}/word-frequency` + params);
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch top words');
-    }
-    const data = await response.json();
-
-    const formattedData = Object.keys(data).map(key => ({
-      value: key,
-      count: data[key]
-    }));
-    
-    return formattedData;
-
-  } catch (error) {
-    throw new Error(error.message);
-  }
-}
-
-
-
 export async function getGender(states, regions, feeling) {
   try {
     let params = getFilterParams(states, regions, feeling);
