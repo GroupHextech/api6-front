@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useContext } from "react";
-import Paper from "@mui/material/Paper";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Checkbox from "@mui/material/Checkbox";
 import FormControlLabel from "@mui/material/FormControlLabel";
+import Typography from "@mui/material/Typography";
+import { useTheme } from "@mui/material";
 import {
   updateDoc,
   doc,
@@ -17,12 +18,18 @@ import { AuthContext } from "../services/authContext";
 import { useNavigate } from "react-router-dom";
 import { deleteUser } from "@firebase/auth";
 
+import Header from "../components/Header";
+import { tokens } from "../theme";
+
 export default function UserData() {
   const { userData, currentUser } = useContext(AuthContext);
   const [latestTerms, setLatestTerms] = useState([]);
   const [termsToUpdate, setTermsToUpdate] = useState([]);
   const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
   const [showDeleteFieldsDialog, setShowDeleteFieldsDialog] = useState(false);
+
+  const theme = useTheme();
+  const colors = tokens(theme.palette.mode);
 
   const navigate = useNavigate();
 
@@ -129,246 +136,199 @@ export default function UserData() {
   };
 
   return (
-    <Box>
-      <Box
-        style={{
-          flex: 0.8,
-          display: "flex",
-          flexDirection: "column",
-          gap: 10,
-          marginRight: 20,
-        }}
-      >
-        <div>
-          <Paper
-            sx={{
-              marginLeft: 3,
-              justifyContent: "center",
-              alignContent: "center",
-            }}
-          >
-            <h1 style={{ textAlign: "center" }}>Your Data</h1>
-          </Paper>
-        </div>
-        <div style={{ display: "flex", flexDirection: "row" }}>
-          <Paper
-            sx={{
-              p: 2,
-              display: "flex",
-              flex: 1,
-              flexDirection: "column",
-              marginLeft: 3,
-              justifyContent: "center",
-              alignItems: "center",
-              gap: 2,
-            }}
-          >
-            <img
-              alt="profile-user"
-              width="200px"
-              height="200px"
-              src={userData.foto}
-              style={{ borderRadius: "50%" }}
-            />
-            {userData.name === "Mineda" && (
-              <Paper
-                style={{
-                  padding: 4,
-                  display: "flex",
-                  justifyContent: "space-between",
-                  width: "40%",
-                }}
-              >
-                <TypingEffect texts={texts} />
-              </Paper>
-            )}
-            <Paper
-              style={{
-                padding: 4,
-                display: "flex",
-                justifyContent: "space-between",
-                width: "40%",
-              }}
+    <>
+      <Box>
+        <Box
+          style={{
+            flex: 0.8,
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          <Box m="20px">
+            {/* HEADER */}
+            <Box
+              display="flex"
+              justifyContent="space-between"
+              alignItems="center"
             >
-              <div>Name :</div>
-              <div>{userData.name}</div>
-            </Paper>
+              <Header title="YOUR DATA" subtitle="" />
+            </Box>
+          </Box>
 
-            <Paper
-              style={{
-                padding: 4,
-                display: "flex",
-                justifyContent: "space-between",
-                width: "40%",
-              }}
+          <Box m="20px">
+            {/* CONTENT */}
+            <Box
+              display="grid"
+              gridTemplateColumns="repeat(12, 1fr)"
+              gap="20px"
             >
-              <div>Email :</div>
-              <div>{userData.email}</div>
-            </Paper>
+              <Box gridColumn="span 12" p="20px" backgroundColor={colors.primary[400]}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: 2,
+                  }}
+                >
+                  <img
+                    alt="profile-user"
+                    width="200px"
+                    height="200px"
+                    src={userData.foto}
+                    style={{ borderRadius: "50%" }}
+                  />
+                  <Box
+                    sx={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 1,
+                      width: "30%",
+                    }}
+                  >
+                    <Box
+                      sx={{ display: "flex", justifyContent: "space-between" }}
+                    >
+                      <Typography>Name:</Typography>
+                      <Typography>{userData.name}</Typography>
+                    </Box>
+                    <Box
+                      sx={{ display: "flex", justifyContent: "space-between" }}
+                    >
+                      <Typography>Email:</Typography>
+                      <Typography>{userData.email}</Typography>
+                    </Box>
+                    <Box
+                      sx={{ display: "flex", justifyContent: "space-between" }}
+                    >
+                      <Typography>Employ Identification:</Typography>
+                      <Typography>{userData.employId}</Typography>
+                    </Box>
+                    <Box
+                      sx={{ display: "flex", justifyContent: "space-between" }}
+                    >
+                      <Typography>Department:</Typography>
+                      <Typography>{userData.department}</Typography>
+                    </Box>
+                    <Box
+                      sx={{ display: "flex", justifyContent: "space-between" }}
+                    >
+                      <Typography>Job Title:</Typography>
+                      <Typography>{userData.jobTitle}</Typography>
+                    </Box>
+                    <Box
+                      sx={{ display: "flex", justifyContent: "space-between" }}
+                    >
+                      <Typography>Phone:</Typography>
+                      <Typography>{userData.phone}</Typography>
+                    </Box>
+                    <Box
+                      sx={{ display: "flex", justifyContent: "space-between" }}
+                    >
+                      <Typography>Role:</Typography>
+                      <Typography>{userData.role}</Typography>
+                    </Box>
+                  </Box>
 
-            <Paper
-              style={{
-                padding: 4,
-                display: "flex",
-                justifyContent: "space-between",
-                width: "40%",
-              }}
-            >
-              <div>Employ Identification :</div>
-              <div>{userData.employId}</div>
-            </Paper>
+                  {[
+                    ...latestTerms.filter((term) => term.type === "USO"),
+                    ...latestTerms.filter((term) => term.type !== "USO"),
+                  ].map((term) => (
+                    <Box
+                      key={term.type}
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        width: "50%",
+                        padding: 1,
+                        border: "1px solid #ccc",
+                        borderRadius: 1,
+                        marginTop: 1,
+                      }}
+                    >
+                      <Typography>
+                        {term.type === "USO"
+                          ? `Termo de USO - Versão: ${term.externalVersion}`
+                          : `Termo de ${term.type}`}
+                      </Typography>
+                      {term.type === "USO" ? (
+                        <Button
+                          variant="contained"
+                          color="primary"
+                          onClick={handleShowExclude}
+                        >
+                          Rejeitar
+                        </Button>
+                      ) : (
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              checked={
+                                termsToUpdate.find((t) => t.type === term.type)
+                                  ?.accepted || false
+                              }
+                              onChange={(event) =>
+                                handleCheckboxChange(
+                                  term.type,
+                                  event.target.checked
+                                )
+                              }
+                              color="primary"
+                            />
+                          }
+                          label={
+                            termsToUpdate.find((t) => t.type === term.type)
+                              ?.accepted
+                              ? "Aceito"
+                              : "Não Aceito"
+                          }
+                        />
+                      )}
+                    </Box>
+                  ))}
 
-            <Paper
-              style={{
-                padding: 4,
-                display: "flex",
-                justifyContent: "space-between",
-                width: "40%",
-              }}
-            >
-              <div>Department :</div>
-              <div>{userData.department}</div>
-            </Paper>
-
-            <Paper
-              style={{
-                padding: 4,
-                display: "flex",
-                justifyContent: "space-between",
-                width: "40%",
-              }}
-            >
-              <div>Job Title :</div>
-              <div>{userData.jobTitle}</div>
-            </Paper>
-
-            <Paper
-              style={{
-                padding: 4,
-                display: "flex",
-                justifyContent: "space-between",
-                width: "40%",
-              }}
-            >
-              <div>Phone :</div>
-              <div>{userData.phone}</div>
-            </Paper>
-
-            <Paper
-              style={{
-                padding: 4,
-                display: "flex",
-                justifyContent: "space-between",
-                width: "40%",
-              }}
-            >
-              <div>Role :</div>
-              <div>{userData.role}</div>
-            </Paper>
-
-            {[
-              ...latestTerms.filter((term) => term.type === "USO"),
-              ...latestTerms.filter((term) => term.type !== "USO"),
-            ].map((term) => (
-              <Paper
-                key={term.type}
-                style={{
-                  padding: 4,
-                  display: "flex",
-                  justifyContent: "space-between",
-                  width: "40%",
-                }}
-              >
-                <div>
-                  {term.type === "USO"
-                    ? `Termo de USO - Versão: ${term.externalVersion}`
-                    : `Termo de ${term.type}`}
-                </div>
-                {term.type === "USO" ? (
+                  {/* Botão Salvar Alterações */}
                   <Button
                     variant="contained"
                     color="primary"
-                    onClick={handleShowExclude}
+                    onClick={handleSaveChanges}
+                    sx={{ marginTop: 2 }}
                   >
-                    Rejeitar
+                    Salvar Alterações
                   </Button>
-                ) : (
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        checked={
-                          termsToUpdate.find((t) => t.type === term.type)
-                            ?.accepted || false
-                        }
-                        onChange={(event) =>
-                          handleCheckboxChange(term.type, event.target.checked)
-                        }
-                        color="primary"
-                      />
-                    }
-                    label={
-                      termsToUpdate.find((t) => t.type === term.type)?.accepted
-                        ? "Aceito"
-                        : "Não Aceito"
-                    }
+
+                  {/* Botão Deletar Conta */}
+                  <Button
+                    variant="contained"
+                    color="error"
+                    onClick={() => setShowDeleteFieldsDialog(true)}
+                    sx={{ marginTop: 2 }}
+                  >
+                    Deletar Conta
+                  </Button>
+
+                  <ConfirmationDialog
+                    open={showConfirmationDialog}
+                    onClose={() => setShowConfirmationDialog(false)}
+                    onConfirm={handleDeleteAccount}
+                    title="Deletar Conta"
+                    content="Esta ação enviará uma solicitação de exclusão de sua conta para o administrador. Você será notificado quando a solicitação for processada."
                   />
-                )}
-              </Paper>
-            ))}
 
-            {/* Botão Salvar Alterações */}
-            <Paper
-              style={{
-                padding: 4,
-                display: "flex",
-                justifyContent: "center",
-                width: "40%",
-              }}
-            >
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={handleSaveChanges}
-              >
-                Salvar Alterações
-              </Button>
-            </Paper>
-
-            <Paper
-              style={{
-                padding: 4,
-                display: "flex",
-                justifyContent: "center",
-                width: "40%",
-              }}
-            >
-              <Button
-                variant="contained"
-                color="error"
-                onClick={() => setShowDeleteFieldsDialog(true)}
-              >
-                Deletar Conta
-              </Button>
-            </Paper>
-
-            <ConfirmationDialog
-              open={showConfirmationDialog}
-              onClose={() => setShowConfirmationDialog(false)}
-              onConfirm={handleDeleteAccount}
-              title="Deletar Conta"
-              content="Esta ação enviará uma solicitação de exclusão de sua conta para o administrador. Você será notificado quando a solicitação for processada."
-            />
-
-            <ConfirmationDialog
-              open={showDeleteFieldsDialog}
-              onClose={() => setShowDeleteFieldsDialog(false)}
-              onConfirm={handleDeleteAccount}
-              title="Reijeitar os Termos de Uso"
-              content="Você tem certeza? Esta ação excluirá todos os dados e sua conta. Deseja confirmar?"
-            />
-          </Paper>
-        </div>
+                  <ConfirmationDialog
+                    open={showDeleteFieldsDialog}
+                    onClose={() => setShowDeleteFieldsDialog(false)}
+                    onConfirm={handleDeleteAccount}
+                    title="Rejeitar os Termos de Uso"
+                    content="Você tem certeza? Esta ação excluirá todos os dados e sua conta. Deseja confirmar?"
+                  />
+                </Box>
+              </Box>
+            </Box>
+          </Box>
+        </Box>
       </Box>
-    </Box>
+    </>
   );
 }
