@@ -38,13 +38,23 @@ const Item = ({ title, to, icon, selected, setSelected }) => {
 const Sidebar = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true); // Inicia como recolhido por padrão
   const [selected, setSelected] = useState("Home");
   const { userData, currentUser, setUserData } = useContext(AuthContext);
   const [userName, setUserName] = useState("");
   const [userRole, setUserRole] = useState("");
   const [userFoto, setUserFoto] = useState("");
   const [progressPorcent, setProgressPorcent] = useState(0);
+  // const location = useLocation();
+
+  useEffect(() => {
+    // Define o estado isCollapsed com base na página ativa
+    if (selected === "Home") {
+      setIsCollapsed(false); // Expande o Sidebar na página Home
+    } else {
+      setIsCollapsed(true); // Recolhe o Sidebar nas outras páginas
+    }
+  }, [selected]);
 
   useEffect(() => {
     if (userData) {

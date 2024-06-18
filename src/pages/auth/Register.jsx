@@ -103,6 +103,10 @@ export default function Register() {
     setShowTermsAlert(false);
   };
 
+  const handleCloseTerms = () => {
+    setShowTermsAlert(false);
+  };
+
   const handleNextClick = async () => {
     if (!termsAccepted['USO']) {
       alert("Você deve aceitar os termos de uso para continuar.");
@@ -316,6 +320,7 @@ export default function Register() {
                                 name="name"
                                 autoComplete="name"
                                 onChange={(e) => setName(e.target.value)}
+                                autoFocus
                               />
                             </Grid>
 
@@ -535,7 +540,7 @@ export default function Register() {
         </Grid>
       </Grid>
 
-      <TermsAndConditions open={showTermsAlert} onAgree={handleAgreeTerms} />
+      <TermsAndConditions open={showTermsAlert} onAgree={handleAgreeTerms} onClose={handleCloseTerms} />
     </ThemeProvider>
   );
 }

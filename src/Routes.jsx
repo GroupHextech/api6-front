@@ -11,7 +11,7 @@ import Register from "../src/pages/auth/Register";
 import Login from "./pages/auth/Login";
 import UserData from "./pages/UserData";
 import Manegement from "./pages/Manegement";
-import { AuthProvider } from "./services/authContext";
+import { AuthProvider, useAuth } from "./services/authContext";
 import PrivateRoute from "./components/PrivateRoute";
 import Termos from "./pages/Terms"
 import {NotificationContext} from "./NotificationContext"
@@ -19,6 +19,7 @@ import {NotificationContext} from "./NotificationContext"
 export default function AppRoutes() {
   const [theme, colorMode] = useMode();
   const [isSidebar, setIsSidebar] = useState(false);
+  const { isAuthenticated } = useAuth();
 
   const location = useLocation();
   const isLoginPage = location.pathname === "/login";
@@ -51,6 +52,7 @@ export default function AppRoutes() {
                     <Route path="/termos" element={<Termos />} />
                   </Route>
                   {/* Adicione outras rotas aqui */}
+                  <Route path="*" element={isAuthenticated ? <Navigate to="/" replace /> : <Navigate to="/login" replace />} />
                 </Routes>
               </main>
             </div>

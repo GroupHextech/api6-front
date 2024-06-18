@@ -1,25 +1,18 @@
 import * as React from "react";
 import { useState, useContext } from "react";
-import Avatar from "@mui/material/Avatar";
 import Button from "@mui/material/Button";
 import CssBaseline from "@mui/material/CssBaseline";
 import TextField from "@mui/material/TextField";
-import FormControlLabel from "@mui/material/FormControlLabel";
-import Checkbox from "@mui/material/Checkbox";
 import Link from "@mui/material/Link";
 import Grid from "@mui/material/Grid";
 import Box from "@mui/material/Box";
-import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import Typography from "@mui/material/Typography";
-import Container from "@mui/material/Container";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../services/authContext";
 import { login } from "../../services/authService";
-
 import CircularProgress from "@mui/material/CircularProgress";
 import { green } from "@mui/material/colors";
-
 import QRCodeService from "../../services/QRCodeService";
 import Alert from "@mui/material/Alert";
 
@@ -41,24 +34,6 @@ function LoadingAnimation() {
   );
 }
 
-function Copyright(props) {
-  return (
-    <Typography
-      variant="body2"
-      color="text.secondary"
-      align="center"
-      {...props}
-    >
-      {"Copyright © "}
-      <Link color="inherit" href="https://mui.com/">
-        HexTech
-      </Link>{" "}
-      {new Date().getFullYear()}
-      {"."}
-    </Typography>
-  );
-}
-
 const defaultTheme = createTheme();
 
 export default function Login() {
@@ -74,6 +49,7 @@ export default function Login() {
   const [googleAuthCode, setGoogleAuthCode] = useState(""); // Estado para o código do Google Authenticator
   const [verifying, setVerifying] = useState(false); // Estado para atrasar a verificação do formulário
   const [showErrorAlert, setShowErrorAlert] = useState(false); // estado para controlar a exibição do alerta de erro
+  const [tempUserData, setTempUserData] = useState(null); // Estado para armazenar os dados do usuário temporariamente
 
   const handleSignIn = async (e) => {
     e.preventDefault();
@@ -82,11 +58,11 @@ export default function Login() {
 
     try {
       const { user, userData } = await login(email, password);
-      setUserData(userData);
+      setTempUserData(userData); // Armazena os dados do usuário temporariamente
       setStep(2); // Muda para a etapa 2 se o login inicial for bem-sucedido
     } catch (error) {
       console.error("Erro ao fazer login:", error);
-      setError(error.message);
+      setError("Incorrect email or password.");
     } finally {
       setSignInLoading(false);
     }
@@ -105,6 +81,7 @@ export default function Login() {
         }, 1000); // Simula um tempo de espera de 1 seg
       });
       if (verificationResult === "Verified") {
+        setUserData(tempUserData); // Define os dados do usuário após a verificação bem-sucedida
         setAuthenticated(true);
         localStorage.setItem('isAuthenticated', true);
         navigate("/");
@@ -114,7 +91,7 @@ export default function Login() {
       }
     } catch (error) {
       console.error("Error verifying Google Authenticator code:", error);
-      setError(error.message);
+      setError("Error verifying Google Authenticator code.");
       setShowErrorAlert(true); // Exibir o alerta de erro
     } finally {
       setLoading(false);
@@ -240,6 +217,7 @@ export default function Login() {
                                 name="email"
                                 autoComplete="email"
                                 onChange={(e) => setEmail(e.target.value)}
+                                autoFocus
                               />
                             </Grid>
                             <Grid item xs={12}>
@@ -279,6 +257,11 @@ export default function Login() {
                               />
                             </Box>
                           )}
+                          {error && (
+                            <Alert severity="error" sx={{ mt: 2 }}>
+                              {error}
+                            </Alert>
+                          )}
                           <Grid container justifyContent="flex-end">
                             <Grid item>
                               <Link href="/register" variant="body2">
@@ -312,6 +295,7 @@ export default function Login() {
                                 label="Google Authenticator Code"
                                 name="googleAuthCode"
                                 autoComplete="off"
+                                autoFocus={step === 2}
                                 onChange={(e) =>
                                   setGoogleAuthCode(e.target.value)
                                 }
@@ -330,7 +314,7 @@ export default function Login() {
                           </Button>
                           {showErrorAlert && (
                             <Alert severity="error" sx={{ mt: 2 }}>
-                              Invalid Google Authenticator code.
+                              {error}
                             </Alert>
                           )}
                         </Box>

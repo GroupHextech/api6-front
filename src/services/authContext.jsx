@@ -21,6 +21,7 @@ export const AuthProvider = ({ children }) => {
       setAuthenticated(false);
       setUserData(null);
       localStorage.removeItem("userData");
+      localStorage.removeItem("isAuthenticated");
       clearTimeout(timeoutRef.current);
     } catch (error) {
       console.error("Erro ao fazer logout:", error);
@@ -29,7 +30,7 @@ export const AuthProvider = ({ children }) => {
 
   const resetTimer = () => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    const id = setTimeout(logout, 2 * 60 * 1000); // 1min
+    const id = setTimeout(logout, 2 * 60 * 1000); // 2 minutos
     timeoutRef.current = id;
   };
 
@@ -37,7 +38,6 @@ export const AuthProvider = ({ children }) => {
     const auth = getAuth();
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
-      // setAuthenticated(!!user);
       setLoading(false);
 
       if (user) {
@@ -79,6 +79,7 @@ export const AuthProvider = ({ children }) => {
         setAuthenticated,
         userData,
         setUserData: updateUserData,
+        logout,
       }}
     >
       {!loading && children}
