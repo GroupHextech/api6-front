@@ -8,10 +8,7 @@ export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setAuthenticated] = useState(false);
-  const [userData, setUserData] = useState(() => {
-    const storedUserData = localStorage.getItem("userData");
-    return storedUserData ? JSON.parse(storedUserData) : null;
-  });
+  const [userData, setUserData] = useState(null);
   const timeoutRef = useRef(null);
 
   const logout = async () => {

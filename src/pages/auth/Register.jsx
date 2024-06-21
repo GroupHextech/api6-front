@@ -8,15 +8,15 @@ import Checkbox from "@mui/material/Checkbox";
 import Link from "@mui/material/Link";
 import Grid from "@mui/material/Grid";
 import Box from "@mui/material/Box";
-import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import Typography from "@mui/material/Typography";
-import Container from "@mui/material/Container";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
-import { useCreateUserWithEmailAndPassword } from "react-firebase-hooks/auth";
-import { auth, firestore } from "../../services/firebaseConfig";
+import { firestore } from "../../services/firebaseConfig";
 import { doc, setDoc, collection, getDocs, query, orderBy, limit } from "@firebase/firestore";
 import { useNavigate } from "react-router-dom";
 import { serverTimestamp } from "@firebase/firestore";
+
+import GoogleLoginButton from "../../components/GoogleLoginButton";
+import { useAuth } from '../../services/authContext';
 
 import QRCodeService from "../../services/QRCodeService";
 import TermsAndConditions from "../../components/register/TermsAndConditions";
@@ -39,9 +39,8 @@ const defaultTheme = createTheme();
 export default function Register() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmationPassword, setConfirmationPassword] = useState("");
   const [name, setName] = useState("");
+  const [foto, setFoto] = useState("");
   const [showTermsAlert, setShowTermsAlert] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState({});
   const [showSecondForm, setShowSecondForm] = useState(false);
@@ -56,12 +55,7 @@ export default function Register() {
 
   const navigate = useNavigate();
 
-  const [createUserWithEmailAndPassword, user, loading, error] =
-    useCreateUserWithEmailAndPassword(auth);
-
-  if (loading) {
-    return <p>Carregando...</p>;
-  }
+  const { currentUser } = useAuth();
 
   useEffect(() => {
     const fetchTerms = async () => {
@@ -88,8 +82,6 @@ export default function Register() {
 
     fetchTerms();
   }, []);
-
-  
 
   const handleSubmit = (event) => {
     event.preventDefault();
@@ -139,17 +131,20 @@ export default function Register() {
     }
   };
 
+  const handleGoogleLoginSuccess = (user) => {
+    setName(user.displayName);
+    setEmail(user.email);
+    setFoto(user.photoURL);
+  };
+
   const registerUser = async () => {
     try {
-      const userCredential = await createUserWithEmailAndPassword(email, password);
-      const user = userCredential.user;
-  
-      if (user) {
+      if (currentUser) {
         await updateAcceptedTermsDetails(); // Atualiza os detalhes dos termos aceitos
-        await createUserDocument(user.uid); // Cria o documento do usuário
+        await createUserDocument(currentUser.uid, currentUser.email, currentUser.displayName, currentUser.photoURL); // Passa dados relevantes do usuário
         navigate("/login");
       } else {
-        console.error("Erro: usuário não foi criado.");
+        console.error("Erro: usuário não está autenticado.");
       }
     } catch (error) {
       console.error("Erro ao criar o usuário:", error);
@@ -167,20 +162,20 @@ export default function Register() {
     setTermsAcceptedDetails(acceptedTermsDetails);
   };
   
-  const createUserDocument = async (uid) => {
+  const createUserDocument = async (uid, userEmail, userName, userPhotoURL) => {
     const userCollectionRef = collection(firestore, "users");
     const userRef = doc(userCollectionRef, uid);
   
     try {
       await setDoc(userRef, {
-        name,
-        email,
+        name: userName,
+        email: userEmail,
         jobTitle,
         department,
         employId,
         phone,
         role: "USER",
-        foto: "../../assets/user.png",
+        foto: userPhotoURL || "../../assets/user.png",
         createdAt: serverTimestamp(),
         version: {
           number: latestVersion, // Utilizar a versão mais recente aqui
@@ -302,8 +297,9 @@ export default function Register() {
                             display: "flex",
                           }}
                         >
-                          Criar Conta
+                          Create account
                         </Typography>
+                        <Box marginTop="10px" align="center"><GoogleLoginButton onLoginSuccess={handleGoogleLoginSuccess} /></Box>
                         <Box
                           component="form"
                           noValidate
@@ -319,6 +315,7 @@ export default function Register() {
                                 label="Nome"
                                 name="name"
                                 autoComplete="name"
+                                value={name}
                                 onChange={(e) => setName(e.target.value)}
                                 autoFocus
                               />
@@ -367,6 +364,7 @@ export default function Register() {
                                 label="Endereço de Email"
                                 name="email"
                                 autoComplete="email"
+                                value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                               />
                             </Grid>
@@ -384,41 +382,13 @@ export default function Register() {
                             </Grid>
 
                             <Grid item xs={12}>
-                              <TextField
-                                required
-                                fullWidth
-                                name="password"
-                                label="Senha"
-                                type="password"
-                                id="password"
-                                autoComplete="new-password"
-                                onChange={(e) => setPassword(e.target.value)}
-                              />
-                            </Grid>
-
-                            <Grid item xs={12}>
-                              <TextField
-                                required
-                                fullWidth
-                                name="confirmationPassword"
-                                label="Confirmar Senha"
-                                type="password"
-                                id="confirmationPassword"
-                                autoComplete="new-password"
-                                onChange={(e) =>
-                                  setConfirmationPassword(e.target.value)
-                                }
-                              />
-                            </Grid>
-
-                            <Grid item xs={12}>
                               <Button
                                 fullWidth
                                 variant="outlined"
                                 color="primary"
                                 onClick={handleSignUpClick}
                               >
-                                Ler os termos de uso
+                                Read the Terms of Use
                               </Button>
                             </Grid>
 

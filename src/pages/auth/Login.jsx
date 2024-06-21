@@ -10,7 +10,7 @@ import Typography from "@mui/material/Typography";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../services/authContext";
-import { login } from "../../services/authService";
+import { handleGoogleLoginSuccess } from "../../services/authService";
 import CircularProgress from "@mui/material/CircularProgress";
 import { green } from "@mui/material/colors";
 import QRCodeService from "../../services/QRCodeService";
@@ -37,8 +37,6 @@ function LoadingAnimation() {
 const defaultTheme = createTheme();
 
 export default function Login() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [signInLoading, setSignInLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -50,19 +48,22 @@ export default function Login() {
   const [verifying, setVerifying] = useState(false); // Estado para atrasar a verificação do formulário
   const [showErrorAlert, setShowErrorAlert] = useState(false); // estado para controlar a exibição do alerta de erro
   const [tempUserData, setTempUserData] = useState(null); // Estado para armazenar os dados do usuário temporariamente
+  const [userEmail, setUserEmail] = useState(""); // Estado para armazenar o e-mail do usuário
 
-  const handleSignIn = async (e) => {
-    e.preventDefault();
+  const handleSignInWithGoogle = async () => {
     setSignInLoading(true);
     setError(null);
 
     try {
-      const { user, userData } = await login(email, password);
-      setTempUserData(userData); // Armazena os dados do usuário temporariamente
-      setStep(2); // Muda para a etapa 2 se o login inicial for bem-sucedido
+      const { user, userData } = await handleGoogleLoginSuccess();
+      if (user) {
+        setUserEmail(user.email); // Armazena o e-mail do usuário
+        setTempUserData(userData); // Armazena os dados do usuário temporariamente
+        setStep(2); // Muda para a etapa 2 se o login inicial for bem-sucedido
+      }
     } catch (error) {
-      console.error("Erro ao fazer login:", error);
-      setError("Incorrect email or password.");
+      console.error("Error signing in with Google:", error);
+      setError("Failed to sign in with Google.");
     } finally {
       setSignInLoading(false);
     }
@@ -77,13 +78,13 @@ export default function Login() {
     try {
       const verificationResult = await new Promise((resolve) => {
         setTimeout(() => {
-          resolve(QRCodeService.verifyToken(email, googleAuthCode));
+          resolve(QRCodeService.verifyToken(userEmail, googleAuthCode));
         }, 1000); // Simula um tempo de espera de 1 seg
       });
       if (verificationResult === "Verified") {
         setUserData(tempUserData); // Define os dados do usuário após a verificação bem-sucedida
         setAuthenticated(true);
-        localStorage.setItem('isAuthenticated', true);
+        localStorage.setItem("isAuthenticated", true);
         navigate("/");
       } else {
         setError("Invalid Google Authenticator code.");
@@ -201,49 +202,50 @@ export default function Login() {
                         >
                           Sign in
                         </Typography>
-                        <Box
-                          component="form"
-                          noValidate
-                          onSubmit={handleSignIn}
-                          sx={{ mt: 3 }}
-                        >
-                          <Grid container spacing={2}>
-                            <Grid item xs={12}>
-                              <TextField
-                                required
-                                fullWidth
-                                id="email"
-                                label="Email Address"
-                                name="email"
-                                autoComplete="email"
-                                onChange={(e) => setEmail(e.target.value)}
-                                autoFocus
-                              />
-                            </Grid>
-                            <Grid item xs={12}>
-                              <TextField
-                                required
-                                fullWidth
-                                name="password"
-                                label="Password"
-                                type="password"
-                                id="password"
-                                autoComplete="new-password"
-                                onChange={(e) => setPassword(e.target.value)}
-                              />
-                            </Grid>
-                          </Grid>
-                          <Button
-                            type="submit"
-                            fullWidth
-                            variant="contained"
-                            sx={{ mt: 3, mb: 2 }}
-                            disabled={signInLoading || email === "" || password.length < 6}
+                        <Box align="center" sx={{ mt: 3 }}>
+                          <button
+                            className="gsi-material-button"
+                            onClick={handleSignInWithGoogle}
                           >
-                            Sign In
-                          </Button>
+                            <div className="gsi-material-button-state"></div>
+                            <div className="gsi-material-button-content-wrapper">
+                              <div className="gsi-material-button-icon">
+                                <svg
+                                  version="1.1"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  viewBox="0 0 48 48"
+                                  xmlnsXlink="http://www.w3.org/1999/xlink"
+                                  style={{ display: "block" }}
+                                >
+                                  <path
+                                    fill="#EA4335"
+                                    d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"
+                                  ></path>
+                                  <path
+                                    fill="#4285F4"
+                                    d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"
+                                  ></path>
+                                  <path
+                                    fill="#FBBC05"
+                                    d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"
+                                  ></path>
+                                  <path
+                                    fill="#34A853"
+                                    d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
+                                  ></path>
+                                  <path fill="none" d="M0 0h48v48H0z"></path>
+                                </svg>
+                              </div>
+                              <span className="gsi-material-button-contents">
+                                Sign in with Google
+                              </span>
+                              <span style={{ display: "none" }}>
+                                Sign in with Google
+                              </span>
+                            </div>
+                          </button>
                           {signInLoading && (
-                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                            <Box sx={{ display: "flex", alignItems: "center" }}>
                               <CircularProgress
                                 size={24}
                                 sx={{
