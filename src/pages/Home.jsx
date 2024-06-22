@@ -59,15 +59,14 @@ export default function Home() {
     checkTerms();
   }, [currentUser]);
 
-  // Adiciona novo campo em USERS_COLLECTION, quando um usuario altera algum termo.
   const handleAcceptTerms = async () => {
     try {
-      const userDocRef = doc(firestore, USERS_COLLECTION, currentUser.uid);
+      const userDocRef = doc(firestore, 'users', currentUser.uid);
       const userDocSnapshot = await getDoc(userDocRef);
       const userData = userDocSnapshot.data();
       const currentTerms = userData.terms || [];
   
-      const latestVersionQuery = query(collection(firestore, TERMS_COLLECTION), orderBy("version", "desc"), limit(1));
+      const latestVersionQuery = query(collection(firestore, "VersaoTermo"), orderBy("version", "desc"), limit(1));
       const latestVersionSnapshot = await getDocs(latestVersionQuery);
       const latestVersionDoc = latestVersionSnapshot.docs[0];
       const latestVersion = latestVersionDoc.data().version;
@@ -86,31 +85,21 @@ export default function Home() {
         { version: latestVersion, terms: latestTermsAccepted },
       ];
   
-      // Cria novo documento em 'termsUpdates'
-      const termsUpdatesRef = collection(userDocRef, "termsUpdates");
-      await addDoc(termsUpdatesRef, {
-        version: latestVersion,
-        terms: latestTermsAccepted,
-        timestamp: new Date(),
-      });
-  
-      // Atualiza os termos do usuario
       await updateDoc(userDocRef, {
         terms: newAcceptedTerms,
         version: { number: latestVersion },
       });
   
-      // Pega a informação atualizada
+      // Atualiza o estado local de userData com os novos dados do usuário
       const updatedUserDocSnapshot = await getDoc(userDocRef);
       const updatedUserData = updatedUserDocSnapshot.data();
-      setUserData(updatedUserData);
+      setUserData(updatedUserData); // Atualiza o estado local de userData
   
-      // Limpa
+      // Limpa os estados locais utilizados para gerenciar a aceitação de termos
       setLatestTerms([]);
       setAcceptedTerms({});
       setShowTermsModal(false);
   
-      // Guarda os termos aceitos
       const termsAccepted = newAcceptedTerms.map(term => term.id);
       localStorage.setItem('termsAccepted', JSON.stringify(termsAccepted));
     } catch (error) {
@@ -148,6 +137,7 @@ export default function Home() {
           display: "flex",
           flex: 1,
           flexDirection: "column",
+          marginLeft: 3,
           position: "absolute",
           top: "50%",
           backgroundColor: "transparent",
