@@ -137,7 +137,6 @@ export default function Home() {
           display: "flex",
           flex: 1,
           flexDirection: "column",
-          marginLeft: 3,
           position: "absolute",
           top: "50%",
           backgroundColor: "transparent",
