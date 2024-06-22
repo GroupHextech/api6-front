@@ -1,4 +1,6 @@
+// Imports
 import React, { useEffect, useState } from "react";
+
 import {
   Box,
   Typography,
@@ -9,9 +11,14 @@ import {
   Button,
   MenuItem,
 } from "@mui/material";
-import { tokens } from "../theme";
 import DeleteIcon from "@mui/icons-material/Delete";
 import BlockIcon from "@mui/icons-material/Block";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+
+import { tokens } from "../theme";
+
 import {
   collection,
   getDocs,
@@ -25,21 +32,17 @@ import {
   limit,
 } from "firebase/firestore";
 import { getFirestore } from "firebase/firestore";
-import Header from "../components/Header";
-import { getAuth } from "firebase/auth";
 
-const db = getFirestore();
-const auth = getAuth();
+import Header from "../components/Header";
 
 import dayjs from "dayjs";
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 
 import { handleRestore } from "../services/SalesService.js";
 import { firestore } from "../services/firebaseConfig";
 
+
 export default function Management() {
+  // ?
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const [users, setUsers] = useState([]);
@@ -59,11 +62,16 @@ export default function Management() {
     setSelectedDate(newValue);
   };
 
+  // variaveis locais
+  const db = getFirestore();
+  const usersCollection = collection(db, "users");
+  const VersaoTermoCollection = collection(db, "VersaoTermo");
+
   useEffect(() => {
     async function fetchData() {
       try {
         // Fetch users
-        const usersCollection = collection(db, "users");
+        usersCollection
         const usersSnapshot = await getDocs(usersCollection);
         const usersList = usersSnapshot.docs
           .map((doc) => ({
@@ -135,7 +143,7 @@ export default function Management() {
       const versionSnapshot = await getDocs(versionQuery);
       const latestVersionDoc = versionSnapshot.docs[0];
       let newVersion = 1; // Default version as an integer
-
+  
       if (latestVersionDoc) {
         const latestVersion = parseInt(latestVersionDoc.data().version, 10);
         newVersion = latestVersion + 1;
@@ -149,14 +157,13 @@ export default function Management() {
           id: doc.id,
           ...doc.data(),
         }))
-        .filter((term) => term.active);
-
+  
       // Create a new version document with the new version and active terms
       await addDoc(collection(firestore, "VersaoTermo"), {
         version: newVersion,
         terms: activeTerms,
       });
-
+  
       setCurrentTermVersion(newVersion.toString());
     } catch (error) {
       console.error("Erro ao atualizar a versão do termo:", error);
@@ -209,9 +216,9 @@ export default function Management() {
     try {
       const termType =
         selectedTermType === "new" ? newTermType : selectedTermType;
-
+  
       // Check if a term with the same type and version already exists
-      const termsCollection = collection(firestore, "terms");
+      const termsCollection = collection(firestore, "VersaoTermo");
       const termsSnapshot = await getDocs(termsCollection);
       const termsList = termsSnapshot.docs.map((doc) => ({
         id: doc.id,
@@ -219,52 +226,56 @@ export default function Management() {
       }));
       const duplicateTerm = termsList.find(
         (term) =>
-          term.type === termType &&
-          term.version === parseInt(newTermVersion, 10)
+          (term) => term.termo?.principal?.type === termType && term.active
       );
       if (duplicateTerm) {
         alert("Um termo com o mesmo tipo e versão já existe.");
         return;
       }
-
+  
       // Inactivate the previous term of the same type
       if (selectedTermType !== "new") {
         const previousTerm = termsList.find(
-          (term) => term.type === termType && term.active
+          (term) => term.termo?.principal?.type === termType && term.active
         );
         if (previousTerm) {
-          await updateDoc(doc(firestore, "terms", previousTerm.id), {
+          await updateDoc(doc(firestore, "VersaoTermo", previousTerm.id), {
             active: false,
           });
         }
       }
-
+  
       // Add new term
-      await addDoc(collection(firestore, "terms"), {
-        type: termType,
-        version: parseInt(newTermVersion, 10), // Convert version to integer
-        content: newTermContent,
-        createdAt: Timestamp.now(),
+      await addDoc(collection(firestore, "VersaoTermo"), {
+        date: Timestamp.now(),
+        termo: {
+          principal: {
+            type: termType,
+            version: parseInt(newTermVersion, 10), // Convert version to integer
+            content: newTermContent,
+          },
+          opcionais: {} // Assuming no optional content for now
+        },
         active: true, // Set the new term as active
       });
-
+  
       alert("Novo termo adicionado com sucesso!");
-
+  
       // Fetch updated terms
       const updatedTermsSnapshot = await getDocs(termsCollection);
       const updatedTermsList = updatedTermsSnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       }));
-
+  
       const uniqueTermTypes = [
-        ...new Set(updatedTermsList.map((term) => term.type)),
+        ...new Set(updatedTermsList.map((term) => term.termo?.principal?.type)),
       ].map((type) => ({
         type,
         latestVersion: Math.max(
           ...updatedTermsList
-            .filter((term) => term.type === type)
-            .map((term) => parseInt(term.version, 10))
+            .filter((term) => term.termo?.principal?.type === type)
+            .map((term) => parseInt(term.termo?.principal?.version, 10))
         ),
       }));
 
@@ -292,45 +303,6 @@ export default function Management() {
     } else {
       setNewTermVersion("");
       setNewTermType("");
-    }
-  };
-
-  const handleInactivateTerm = async (termId) => {
-    try {
-      console.log("Inactivating term with ID:", termId);
-      if (!termId) {
-        throw new Error("Term ID is undefined");
-      }
-
-      const termRef = doc(db, "terms", termId);
-      await updateDoc(termRef, {
-        active: false,
-      });
-
-      alert("Termo inativado com sucesso!");
-
-      const termsCollection = collection(db, "terms");
-      const termsSnapshot = await getDocs(termsCollection);
-      const termsList = termsSnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-
-      const uniqueTermTypes = [
-        ...new Set(termsList.map((term) => term.type)),
-      ].map((type) => ({
-        type,
-        latestVersion: Math.max(
-          ...termsList
-            .filter((term) => term.type === type)
-            .map((term) => parseFloat(term.version))
-        ),
-      }));
-
-      setTermTypes(uniqueTermTypes);
-      await updateTermVersion();
-    } catch (error) {
-      console.error("Erro ao inativar termo:", error);
     }
   };
 
@@ -518,7 +490,7 @@ export default function Management() {
                     Add a new term
                   </Typography>
                   <TextField
-                    label="Tipo de Sub-Termo"
+                    label="+"
                     variant="outlined"
                     fullWidth
                     margin="normal"
@@ -531,11 +503,12 @@ export default function Management() {
                         {term.type}
                       </MenuItem>
                     ))}
-                    <MenuItem value="new">Create new type</MenuItem>
+                    <MenuItem value="new">Novo Termo Opcional</MenuItem>
+                    <MenuItem value="new">Atualizar Termo Principal</MenuItem>
                   </TextField>
                   {selectedTermType === "new" && (
                     <TextField
-                      label="Novo Tipo de Termo"
+                      label="Nome do Termo"
                       variant="outlined"
                       fullWidth
                       margin="normal"
@@ -543,15 +516,6 @@ export default function Management() {
                       onChange={(e) => setNewTermType(e.target.value)}
                     />
                   )}
-                  <TextField
-                    label="Versão"
-                    variant="outlined"
-                    fullWidth
-                    margin="normal"
-                    value={newTermVersion}
-                    onChange={(e) => setNewTermVersion(e.target.value)}
-                    disabled={selectedTermType !== "new"} // Disable version input if not creating a new type
-                  />
                   <TextField
                     label="Conteúdo"
                     variant="outlined"
