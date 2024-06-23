@@ -1,6 +1,4 @@
-// Imports
 import React, { useEffect, useState } from "react";
-
 import {
   Box,
   Typography,
@@ -11,14 +9,9 @@ import {
   Button,
   MenuItem,
 } from "@mui/material";
+import { tokens } from "../theme";
 import DeleteIcon from "@mui/icons-material/Delete";
 import BlockIcon from "@mui/icons-material/Block";
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-
-import { tokens } from "../theme";
-
 import {
   collection,
   getDocs,
@@ -32,17 +25,21 @@ import {
   limit,
 } from "firebase/firestore";
 import { getFirestore } from "firebase/firestore";
-
 import Header from "../components/Header";
+import { getAuth } from "firebase/auth";
+
+const db = getFirestore();
+const auth = getAuth();
 
 import dayjs from "dayjs";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 
 import { handleRestore } from "../services/SalesService.js";
 import { firestore } from "../services/firebaseConfig";
 
-
 export default function Management() {
-  // ?
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const [users, setUsers] = useState([]);
@@ -62,16 +59,11 @@ export default function Management() {
     setSelectedDate(newValue);
   };
 
-  // variaveis locais
-  const db = getFirestore();
-  const usersCollection = collection(db, "users");
-  const VersaoTermoCollection = collection(db, "VersaoTermo");
-
   useEffect(() => {
     async function fetchData() {
       try {
         // Fetch users
-        usersCollection
+        const usersCollection = collection(db, "users");
         const usersSnapshot = await getDocs(usersCollection);
         const usersList = usersSnapshot.docs
           .map((doc) => ({
@@ -148,7 +140,7 @@ export default function Management() {
         const latestVersion = parseInt(latestVersionDoc.data().version, 10);
         newVersion = latestVersion + 1;
       }
-
+  
       // Fetch all active terms
       const termsCollection = collection(firestore, "terms");
       const termsSnapshot = await getDocs(termsCollection);
@@ -157,6 +149,7 @@ export default function Management() {
           id: doc.id,
           ...doc.data(),
         }))
+        .filter((term) => term.active);
   
       // Create a new version document with the new version and active terms
       await addDoc(collection(firestore, "VersaoTermo"), {
@@ -169,7 +162,7 @@ export default function Management() {
       console.error("Erro ao atualizar a versão do termo:", error);
     }
   };
-
+  
   const handleDeleteUser = async (userId) => {
     try {
       await deleteDoc(doc(firestore, "users", userId));
@@ -214,19 +207,17 @@ export default function Management() {
 
   const handleAddNewTerm = async () => {
     try {
-      const termType =
-        selectedTermType === "new" ? newTermType : selectedTermType;
+      const termType = selectedTermType === "new" ? newTermType : selectedTermType;
   
       // Check if a term with the same type and version already exists
-      const termsCollection = collection(firestore, "VersaoTermo");
+      const termsCollection = collection(firestore, "terms");
       const termsSnapshot = await getDocs(termsCollection);
       const termsList = termsSnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       }));
       const duplicateTerm = termsList.find(
-        (term) =>
-          (term) => term.termo?.principal?.type === termType && term.active
+        (term) => term.type === termType && term.version === parseInt(newTermVersion, 10)
       );
       if (duplicateTerm) {
         alert("Um termo com o mesmo tipo e versão já existe.");
@@ -236,26 +227,21 @@ export default function Management() {
       // Inactivate the previous term of the same type
       if (selectedTermType !== "new") {
         const previousTerm = termsList.find(
-          (term) => term.termo?.principal?.type === termType && term.active
+          (term) => term.type === termType && term.active
         );
         if (previousTerm) {
-          await updateDoc(doc(firestore, "VersaoTermo", previousTerm.id), {
+          await updateDoc(doc(firestore, "terms", previousTerm.id), {
             active: false,
           });
         }
       }
   
       // Add new term
-      await addDoc(collection(firestore, "VersaoTermo"), {
-        date: Timestamp.now(),
-        termo: {
-          principal: {
-            type: termType,
-            version: parseInt(newTermVersion, 10), // Convert version to integer
-            content: newTermContent,
-          },
-          opcionais: {} // Assuming no optional content for now
-        },
+      await addDoc(collection(firestore, "terms"), {
+        type: termType,
+        version: parseInt(newTermVersion, 10), // Convert version to integer
+        content: newTermContent,
+        createdAt: Timestamp.now(),
         active: true, // Set the new term as active
       });
   
@@ -269,18 +255,18 @@ export default function Management() {
       }));
   
       const uniqueTermTypes = [
-        ...new Set(updatedTermsList.map((term) => term.termo?.principal?.type)),
+        ...new Set(updatedTermsList.map((term) => term.type)),
       ].map((type) => ({
         type,
         latestVersion: Math.max(
           ...updatedTermsList
-            .filter((term) => term.termo?.principal?.type === type)
-            .map((term) => parseInt(term.termo?.principal?.version, 10))
+            .filter((term) => term.type === type)
+            .map((term) => parseInt(term.version, 10))
         ),
       }));
-
+  
       setTermTypes(uniqueTermTypes);
-
+  
       setSelectedTermType("");
       setNewTermType("");
       setNewTermVersion("");
@@ -290,6 +276,7 @@ export default function Management() {
       console.error("Erro ao adicionar novo termo:", error);
     }
   };
+  
 
   const handleTermTypeChange = (event) => {
     const selectedType = event.target.value;
@@ -306,259 +293,276 @@ export default function Management() {
     }
   };
 
+  const handleInactivateTerm = async (termId) => {
+    try {
+      console.log("Inactivating term with ID:", termId);
+      if (!termId) {
+        throw new Error("Term ID is undefined");
+      }
+
+      const termRef = doc(db, "terms", termId);
+      await updateDoc(termRef, {
+        active: false,
+      });
+
+      alert("Termo inativado com sucesso!");
+
+      const termsCollection = collection(db, "terms");
+      const termsSnapshot = await getDocs(termsCollection);
+      const termsList = termsSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      const uniqueTermTypes = [
+        ...new Set(termsList.map((term) => term.type)),
+      ].map((type) => ({
+        type,
+        latestVersion: Math.max(
+          ...termsList
+            .filter((term) => term.type === type)
+            .map((term) => parseFloat(term.version))
+        ),
+      }));
+
+      setTermTypes(uniqueTermTypes);
+      await updateTermVersion();
+    } catch (error) {
+      console.error("Erro ao inativar termo:", error);
+    }
+  };
+
   const filteredUsers = users.filter((user) =>
     user.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
-    <>
-      <Box>
-        <Box
-          style={{
-            flex: 0.8,
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
-          <Box m="20px">
-            {/* HEADER */}
-            <Box
-              display="flex"
-              justifyContent="space-between"
-              alignItems="center"
-            >
-              <Header title="MANAGEMENT" subtitle="Manage users, restore backups and add new terms" />
-            </Box>
-          </Box>
-
-          <Box m="20px">
-            <Box
-              display="grid"
-              gridTemplateColumns="repeat(12, 1fr)"
-              gap="20px"
-            >
-              {/* First Column */}
-              <Box
-                gridColumn="span 6"
-                p="20px"
-                backgroundColor={colors.primary[400]}
-              >
-                <Box>
-                  <Typography
-                    variant="h3"
-                    color={colors.grey[100]}
-                    fontWeight="bold"
-                    sx={{ m: "10px 0 0 0" }}
-                  >
-                    Deletion Request
-                  </Typography>
-                  {deletionRequests.length > 0 ? (
-                    deletionRequests.map((request) => (
-                      <Box
-                        key={request.id}
-                        display="flex"
-                        justifyContent="space-between"
-                        alignItems="center"
-                        width="100%"
-                        p={1}
-                        m={1}
-                        bgcolor={colors.primary[500]}
-                        borderRadius={2}
-                      >
-                        <Typography variant="body1">
-                          {request.userName} ({request.userEmail}) -{" "}
-                          {request.requestedAt.toDate().toLocaleString()}
-                        </Typography>
-                        <Stack direction="row" spacing={1}>
-                          <IconButton
-                            color="secondary"
-                            onClick={() =>
-                              handleDeleteRequest(request.id, request.userId)
-                            }
-                          >
-                            <DeleteIcon />
-                          </IconButton>
-                          <IconButton
-                            color="error"
-                            onClick={() => handleDeclineRequest(request.id)}
-                          >
-                            <BlockIcon />
-                          </IconButton>
-                        </Stack>
-                      </Box>
-                    ))
-                  ) : (
-                    <Typography variant="body1">
-                      Nenhuma solicitação de exclusão encontrada
-                    </Typography>
-                  )}
-                  <TextField
-                    label="Pesquisar Usuário"
-                    variant="outlined"
-                    fullWidth
-                    margin="normal"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                  {filteredUsers.length > 0 ? (
-                    filteredUsers.map((user) => (
-                      <Box
-                        key={user.id}
-                        display="flex"
-                        justifyContent="space-between"
-                        alignItems="center"
-                        width="100%"
-                        p={1}
-                        m={1}
-                        bgcolor={colors.blueAccent[900]}
-                        borderRadius={2}
-                      >
-                        <Typography variant="body1">{user.name}</Typography>
-                        <IconButton
-                          color="secondary"
-                          onClick={() => handleDeleteUser(user.id)}
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </Box>
-                    ))
-                  ) : (
-                    <Typography variant="body1">
-                      Nenhum usuário encontrado
-                    </Typography>
-                  )}
-                  <Typography
-                    variant="h3"
-                    color={colors.grey[100]}
-                    fontWeight="bold"
-                    sx={{ marginTop: "30px" }}
-                    margin="normal"
-                  >
-                    Restore Backup
-                  </Typography>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 2,
-                      marginTop: "20px",
-                    }}
-                  >
-                    <LocalizationProvider
-                      dateAdapter={AdapterDayjs}
-                      locale="pt-BR"
-                    >
-                      <DatePicker
-                        label="Select date"
-                        value={selectedDate}
-                        onChange={handleDateChange}
-                        maxDate={today}
-                        slotProps={{ textField: { variant: "outlined" } }}
-                        format="DD/MM/YYYY"
-                      />
-                    </LocalizationProvider>
-                    {selectedDate && (
-                      <div>
-                        <Button
-                          variant="contained"
-                          onClick={() => handleRestore(selectedDate)}
-                        >
-                          Restore Backup
-                        </Button>
-                      </div>
-                    )}
-                  </Box>
-                </Box>
-              </Box>
-
-              {/* Second Column */}
-              <Box
-                gridColumn="span 6"
-                p="20px"
-                backgroundColor={colors.primary[400]}
-              >
-                <Box>
-                  <Typography
-                    variant="h3"
-                    color={colors.grey[100]}
-                    fontWeight="bold"
-                    sx={{ m: "10px 0 0 0" }}
-                  >
-                    Term Version: {currentTermVersion}
-                  </Typography>
-                  <Typography variant="h6" align="top">
-                    Add a new term
-                  </Typography>
-                  <TextField
-                    label="+"
-                    variant="outlined"
-                    fullWidth
-                    margin="normal"
-                    value={selectedTermType}
-                    onChange={handleTermTypeChange}
-                    select
-                  >
-                    {termTypes.map((term) => (
-                      <MenuItem key={term.type} value={term.type}>
-                        {term.type}
-                      </MenuItem>
-                    ))}
-                    <MenuItem value="new">Novo Termo Opcional</MenuItem>
-                    <MenuItem value="new">Atualizar Termo Principal</MenuItem>
-                  </TextField>
-                  {selectedTermType === "new" && (
-                    <TextField
-                      label="Nome do Termo"
-                      variant="outlined"
-                      fullWidth
-                      margin="normal"
-                      value={newTermType}
-                      onChange={(e) => setNewTermType(e.target.value)}
-                    />
-                  )}
-                  <TextField
-                    label="Conteúdo"
-                    variant="outlined"
-                    fullWidth
-                    margin="normal"
-                    multiline
-                    rows={4}
-                    value={newTermContent}
-                    onChange={(e) => setNewTermContent(e.target.value)}
-                  />
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    onClick={handleAddNewTerm}
-                  >
-                    Create
-                  </Button>
-                  <Typography variant="h4" gutterBottom sx={{ marginTop: "30px", }}>
-                    Active terms
-                  </Typography>
-                  {termTypes.map((term) => (
-                    <Box
-                      key={term.type}
-                      display="flex"
-                      justifyContent="space-between"
-                      alignItems="center"
-                      width="100%"
-                      p={1}
-                      m={1}
-                      bgcolor={colors.blueAccent[900]}
-                      borderRadius={2}
-                    >
-                      <Typography variant="body1">
-                        {term.type} - Versão {term.latestVersion}
-                      </Typography>
-                    </Box>
-                  ))}
-                </Box>
-              </Box>
-            </Box>
+    <Box>
+      <Box
+        style={{ flex: 0.8, display: "flex", flexDirection: "column", gap: 10 }}
+      >
+        <Box m="20px">
+          {/* HEADER */}
+          <Box
+            display="flex"
+            justifyContent="space-between"
+            alignItems="center"
+          >
+            <Header title="Management" />
           </Box>
         </Box>
+
+        {/* CONTENT */}
+        <div style={{ display: "flex", flexDirection: "row" }}>
+          <Box
+            gridColumn="span 3"
+            backgroundColor={colors.primary[400]}
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
+            sx={{
+              p: 2,
+              display: "flex",
+              flex: 1,
+              flexDirection: "column",
+              marginRight: 3,
+            }}
+          >
+            <Typography variant="h6" gutterBottom>
+              Solicitações de Exclusão
+            </Typography>
+            {deletionRequests.length > 0 ? (
+              deletionRequests.map((request) => (
+                <Box
+                  key={request.id}
+                  display="flex"
+                  justifyContent="space-between"
+                  alignItems="center"
+                  width="100%"
+                  p={1}
+                  m={1}
+                  bgcolor={colors.primary[500]}
+                  borderRadius={2}
+                >
+                  <Typography variant="body1">
+                    {request.userName} ({request.userEmail}) -{" "}
+                    {request.requestedAt.toDate().toLocaleString()}
+                  </Typography>
+                  <Stack direction="row" spacing={1}>
+                    <IconButton
+                      color="secondary"
+                      onClick={() =>
+                        handleDeleteRequest(request.id, request.userId)
+                      }
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                    <IconButton
+                      color="error"
+                      onClick={() => handleDeclineRequest(request.id)}
+                    >
+                      <BlockIcon />
+                    </IconButton>
+                  </Stack>
+                </Box>
+              ))
+            ) : (
+              <Typography variant="body1">
+                Nenhuma solicitação de exclusão encontrada
+              </Typography>
+            )}
+            <TextField
+              label="Pesquisar Usuário"
+              variant="outlined"
+              fullWidth
+              margin="normal"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            {filteredUsers.length > 0 ? (
+              filteredUsers.map((user) => (
+                <Box
+                  key={user.id}
+                  display="flex"
+                  justifyContent="space-between"
+                  alignItems="center"
+                  width="100%"
+                  p={1}
+                  m={1}
+                  bgcolor={colors.grey[900]}
+                  borderRadius={2}
+                >
+                  <Typography variant="body1">{user.name}</Typography>
+                  <IconButton
+                    color="secondary"
+                    onClick={() => handleDeleteUser(user.id)}
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </Box>
+              ))
+            ) : (
+              <Typography variant="body1">Nenhum usuário encontrado</Typography>
+            )}
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2, margin: "10px" }}>
+              <LocalizationProvider dateAdapter={AdapterDayjs} locale="pt-BR">
+                <DatePicker
+                  label="Select date"
+                  value={selectedDate}
+                  onChange={handleDateChange}
+                  maxDate={today}
+                  slotProps={{ textField: { variant: "outlined" } }}
+                  format="DD/MM/YYYY"
+                />
+              </LocalizationProvider>
+              {selectedDate && (
+                <div>
+                  <Button
+                    variant="contained"
+                    onClick={() => handleRestore(selectedDate)}
+                  >
+                    Restore Backup
+                  </Button>
+                </div>
+              )}
+            </Box>
+          </Box>
+
+          <Box
+            gridColumn="span 3"
+            backgroundColor={colors.primary[400]}
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
+            sx={{
+              p: 2,
+              display: "flex",
+              flex: 1,
+              flexDirection: "column",
+              marginLeft: 3,
+            }}
+          >
+            <Typography variant="h3" gutterBottom>
+              Versão do Termo: {currentTermVersion}
+            </Typography>
+            <Typography variant="h6" gutterBottom>
+              Adicionar Novo Termo
+            </Typography>
+            <TextField
+              label="Tipo de Sub-Termo"
+              variant="outlined"
+              fullWidth
+              margin="normal"
+              value={selectedTermType}
+              onChange={handleTermTypeChange}
+              select
+            >
+              {termTypes.map((term) => (
+                <MenuItem key={term.type} value={term.type}>
+                  {term.type}
+                </MenuItem>
+              ))}
+              <MenuItem value="new">Criar Novo Tipo</MenuItem>
+            </TextField>
+            {selectedTermType === "new" && (
+              <TextField
+                label="Novo Tipo de Termo"
+                variant="outlined"
+                fullWidth
+                margin="normal"
+                value={newTermType}
+                onChange={(e) => setNewTermType(e.target.value)}
+              />
+            )}
+            <TextField
+              label="Versão"
+              variant="outlined"
+              fullWidth
+              margin="normal"
+              value={newTermVersion}
+              onChange={(e) => setNewTermVersion(e.target.value)}
+              disabled={selectedTermType !== "new"} // Disable version input if not creating a new type
+            />
+            <TextField
+              label="Conteúdo"
+              variant="outlined"
+              fullWidth
+              margin="normal"
+              multiline
+              rows={4}
+              value={newTermContent}
+              onChange={(e) => setNewTermContent(e.target.value)}
+            />
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleAddNewTerm}
+            >
+              Adicionar Termo
+            </Button>
+            <Typography variant="h6" gutterBottom>
+              Termos Ativos
+            </Typography>
+            {termTypes.map((term) => (
+              <Box
+                key={term.type}
+                display="flex"
+                justifyContent="space-between"
+                alignItems="center"
+                width="100%"
+                p={1}
+                m={1}
+                bgcolor={colors.primary[500]}
+                borderRadius={2}
+              >
+                <Typography variant="body1">
+                  {term.type} - Versão {term.latestVersion}
+                </Typography>
+              </Box>
+            ))}
+          </Box>
+        </div>
       </Box>
-    </>
+    </Box>
   );
 }
