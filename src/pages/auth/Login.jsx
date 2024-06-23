@@ -15,6 +15,7 @@ import CircularProgress from "@mui/material/CircularProgress";
 import { green } from "@mui/material/colors";
 import QRCodeService from "../../services/QRCodeService";
 import Alert from "@mui/material/Alert";
+import { redirectToAuthorizationPage } from "../../services/oauthService";
 
 function LoadingAnimation() {
   return (
@@ -53,19 +54,21 @@ export default function Login() {
 
   const handleSignIn = async (e) => {
     e.preventDefault();
-    setSignInLoading(true);
-    setError(null);
+    redirectToAuthorizationPage()
 
-    try {
-      const { user, userData } = await login(email, password);
-      setTempUserData(userData); // Armazena os dados do usuário temporariamente
-      setStep(2); // Muda para a etapa 2 se o login inicial for bem-sucedido
-    } catch (error) {
-      console.error("Erro ao fazer login:", error);
-      setError("Incorrect email or password.");
-    } finally {
-      setSignInLoading(false);
-    }
+    // setSignInLoading(true);
+    // setError(null);
+
+    // try {
+    //   const { user, userData } = await login(email, password);
+    //   setTempUserData(userData); // Armazena os dados do usuário temporariamente
+    //   setStep(2); // Muda para a etapa 2 se o login inicial for bem-sucedido
+    // } catch (error) {
+    //   console.error("Erro ao fazer login:", error);
+    //   setError("Incorrect email or password.");
+    // } finally {
+    //   setSignInLoading(false);
+    // }
   };
 
   const handleVerifyGoogleAuthCode = async (e) => {
@@ -180,7 +183,7 @@ export default function Login() {
                       borderRadius: "10px",
                     }}
                   >
-                    {step === 1 ? (
+                    {step === 1 && (
                       <Box>
                         <div
                           style={{
@@ -271,7 +274,8 @@ export default function Login() {
                           </Grid>
                         </Box>
                       </Box>
-                    ) : (
+                    )} 
+                    {step === 2 && (
                       <Box>
                         <Typography
                           component="h1"

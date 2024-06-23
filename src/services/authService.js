@@ -7,13 +7,14 @@ export const login = async (email, password) => {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
     const uid = user.uid;
+    const token = await user.getIdToken();
 
     const userCollectionRef = collection(firestore, "users");
     const userRef = doc(userCollectionRef, uid);
     const userSnapshot = await getDoc(userRef);
 
     if (userSnapshot.exists()) {
-      return { user, userData: userSnapshot.data() };
+      return { user, userData: userSnapshot.data(), token };
     } else {
       throw new Error("User data not found");
     }
