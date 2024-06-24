@@ -9,8 +9,13 @@ import {
   updateDoc,
   doc,
   addDoc,
+  setDoc,
   collection,
   deleteDoc,
+  query,
+  orderBy,
+  limit,
+  getDocs,
 } from "firebase/firestore";
 import { firestore } from "../services/firebaseConfig";
 import ConfirmationDialog from "../components/ConfirmationDialog";
@@ -34,100 +39,109 @@ export default function UserData() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const loadUserData = async () => {
-      if (userData && userData.terms && userData.terms.length) {
-        const sortedTerms = getLatestTerms(userData.terms);
-        setLatestTerms(sortedTerms);
-        // Initialize termsToUpdate with current user terms
-        setTermsToUpdate(
-          sortedTerms.map((term) => ({
-            type: term.type,
-            accepted: term.accepted,
-          }))
-        );
+    const fetchLatestTerms = async () => {
+      try {
+        const termsRef = collection(firestore, "VersaoTermo");
+        const termsQuery = query(termsRef, orderBy("date", "desc"), limit(1));
+
+        const querySnapshot = await getDocs(termsQuery);
+        if (!querySnapshot.empty) {
+          const latestTerm = querySnapshot.docs[0].data();
+          const principalText = latestTerm.termo.principal.texto;
+          const opcionais = latestTerm.termo.opcionais || {};
+
+          const terms = [
+            {
+              type: "principal",
+              text: principalText,
+              version: latestTerm.termo.principal.version,
+            },
+            ...Object.keys(opcionais).map((key) => ({
+              type: key,
+              value: opcionais[key],
+            })),
+          ];
+
+          setLatestTerms(terms);
+
+          // Initialize termsToUpdate with current user terms
+          setTermsToUpdate(
+            terms.map((term) => ({
+              type: term.type,
+              accepted: term.type === "principal" ? userData.terms.principal : userData.terms[term.type],
+            }))
+          );
+        }
+      } catch (error) {
+        console.error("Error fetching latest terms:", error);
       }
     };
 
     if (userData) {
-      loadUserData();
+      fetchLatestTerms();
     }
   }, [userData]);
 
-  const getLatestTerms = (termsArray) => {
-    if (!termsArray || termsArray.length === 0) {
-      return [];
-    }
-
-    const sortedTerms = [...termsArray].sort((a, b) => {
-      if (a.type === "USO") return -1;
-      if (b.type === "USO") return 1;
-      return 0;
-    });
-
-    const latestTermsObject = sortedTerms.reduce((latest, current) =>
-      parseInt(current.version) > parseInt(latest.version) ? current : latest
-    );
-
-    return latestTermsObject.terms.map((term) => ({
-      ...term,
-      type: term.type,
-      externalVersion: latestTermsObject.version,
-    }));
-  };
-
   const handleCheckboxChange = (termType, accepted) => {
-    // Atualiza o estado local termsToUpdate com a alteração do checkbox
+    // Update local state termsToUpdate with checkbox change
     setTermsToUpdate((prevTerms) =>
-      prevTerms.map((term) =>
-        term.type === termType ? { ...term, accepted } : term
-      )
+      prevTerms.map((term) => (term.type === termType ? { ...term, accepted } : term))
     );
   };
 
   const handleDeleteAccount = async () => {
     try {
-      // Adicionar documento na coleção 'blacklist'
+      // Add document to 'blacklist' collection
       await addDoc(collection(firestore, "blacklist"), {
         userId: currentUser.uid,
         timestamp: new Date(),
       });
 
-      // Excluir o documento do usuário
+      // Delete user document
       const userRef = doc(firestore, "users", currentUser.uid);
       await deleteDoc(userRef);
 
-      // Excluir o usuário
+      // Delete the user
       await deleteUser(currentUser);
 
-      // Navegar para a página de login
+      // Navigate to login page
       navigate("/login");
     } catch (error) {
-      console.error("Erro ao excluir a conta do usuário:", error);
+      console.error("Error deleting user account:", error);
     }
   };
 
   const handleSaveChanges = async () => {
     try {
-      const updatedTerms = latestTerms.map((term) => {
-        const updatedTerm = termsToUpdate.find((t) => t.type === term.type);
-        return {
-          ...term,
-          accepted: updatedTerm.accepted,
-          timestamp: new Date(),
-        };
-      });
+      // Prepare data for the new userTermo document
+      const termsData = termsToUpdate.reduce((acc, term) => {
+        acc[term.type] = term.accepted || false;
+        return acc;
+      }, {});
 
-      const userRef = doc(firestore, "users", currentUser.uid);
-      await updateDoc(userRef, {
-        terms: updatedTerms,
-      });
+      // Get the current term version
+      const principalTerm = latestTerms.find((t) => t.type === "principal");
+      const currentTermVersion = principalTerm ? principalTerm.version : 0;
+
+      const userTermoData = {
+        date: new Date(),
+        termos: {
+          principal: termsData["principal"] || false,
+          versao: termsData["principal"] ? currentTermVersion : 0,
+          ...termsData,
+        },
+        user: doc(firestore, "users", currentUser.uid),
+      };
+
+      console.log("Setting new userTermo data:", userTermoData);
+
+      // Add new document to 'userTermo' collection
+      await addDoc(collection(firestore, "userTermo"), userTermoData);
 
       alert("Alterações salvas com sucesso!");
     } catch (error) {
       console.error("Erro ao salvar alterações:", error);
-      alert(
-        "Erro ao salvar alterações. Por favor, tente novamente mais tarde."
-      );
+      alert("Erro ao salvar alterações. Por favor, tente novamente mais tarde.");
     }
   };
 
@@ -147,11 +161,7 @@ export default function UserData() {
         >
           <Box m="20px">
             {/* HEADER */}
-            <Box
-              display="flex"
-              justifyContent="space-between"
-              alignItems="center"
-            >
+            <Box display="flex" justifyContent="space-between" alignItems="center">
               <Header title="YOUR DATA" subtitle="" />
             </Box>
           </Box>
@@ -168,6 +178,13 @@ export default function UserData() {
                     gap: 2,
                   }}
                 >
+                  <img
+                    alt="profile-user"
+                    width="200px"
+                    height="200px"
+                    src={userData.foto}
+                    style={{ borderRadius: "50%" }}
+                  />
                   <Box
                     sx={{
                       display: "flex",
@@ -176,54 +193,38 @@ export default function UserData() {
                       width: "30%",
                     }}
                   >
-                    <Box
-                      sx={{ display: "flex", justifyContent: "space-between" }}
-                    >
+                    <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                       <Typography>Name:</Typography>
                       <Typography>{userData.name}</Typography>
                     </Box>
-                    <Box
-                      sx={{ display: "flex", justifyContent: "space-between" }}
-                    >
+                    <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                       <Typography>Email:</Typography>
                       <Typography>{userData.email}</Typography>
                     </Box>
-                    <Box
-                      sx={{ display: "flex", justifyContent: "space-between" }}
-                    >
+                    <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                       <Typography>Employ Identification:</Typography>
                       <Typography>{userData.employId}</Typography>
                     </Box>
-                    <Box
-                      sx={{ display: "flex", justifyContent: "space-between" }}
-                    >
+                    <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                       <Typography>Department:</Typography>
                       <Typography>{userData.department}</Typography>
                     </Box>
-                    <Box
-                      sx={{ display: "flex", justifyContent: "space-between" }}
-                    >
+                    <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                       <Typography>Job Title:</Typography>
                       <Typography>{userData.jobTitle}</Typography>
                     </Box>
-                    <Box
-                      sx={{ display: "flex", justifyContent: "space-between" }}
-                    >
+                    <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                       <Typography>Phone:</Typography>
                       <Typography>{userData.phone}</Typography>
                     </Box>
-                    <Box
-                      sx={{ display: "flex", justifyContent: "space-between" }}
-                    >
+                    <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                       <Typography>Role:</Typography>
                       <Typography>{userData.role}</Typography>
                     </Box>
                   </Box>
 
-                  {[
-                    ...latestTerms.filter((term) => term.type === "USO"),
-                    ...latestTerms.filter((term) => term.type !== "USO"),
-                  ].map((term) => (
+                  {/* Display Terms */}
+                  {latestTerms.map((term) => (
                     <Box
                       key={term.type}
                       sx={{
@@ -237,38 +238,44 @@ export default function UserData() {
                       }}
                     >
                       <Typography>
-                        {term.type === "USO"
-                          ? `Termo de USO - Versão: ${term.externalVersion}`
-                          : `Termo de ${term.type}`}
+                        {term.type === "principal"
+                          ? `Termo Principal`
+                          : `${term.type}`}
                       </Typography>
-                      {term.type === "USO" ? (
-                        <Button
-                          variant="contained"
-                          color="primary"
-                          onClick={handleShowExclude}
-                        >
-                          Rejeitar
-                        </Button>
-                      ) : (
+                      {term.type === "principal" ? (
                         <FormControlLabel
                           control={
                             <Checkbox
                               checked={
-                                termsToUpdate.find((t) => t.type === term.type)
-                                  ?.accepted || false
+                                termsToUpdate.find((t) => t.type === "principal")?.accepted || false
                               }
                               onChange={(event) =>
-                                handleCheckboxChange(
-                                  term.type,
-                                  event.target.checked
-                                )
+                                handleCheckboxChange("principal", event.target.checked)
                               }
                               color="primary"
                             />
                           }
                           label={
-                            termsToUpdate.find((t) => t.type === term.type)
-                              ?.accepted
+                            termsToUpdate.find((t) => t.type === "principal")?.accepted
+                              ? "Aceito"
+                              : "Não Aceito"
+                          }
+                        />
+                      ) : (
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              checked={
+                                termsToUpdate.find((t) => t.type === term.type)?.accepted || false
+                              }
+                              onChange={(event) =>
+                                handleCheckboxChange(term.type, event.target.checked)
+                              }
+                              color="primary"
+                            />
+                          }
+                          label={
+                            termsToUpdate.find((t) => t.type === term.type)?.accepted
                               ? "Aceito"
                               : "Não Aceito"
                           }
@@ -277,7 +284,7 @@ export default function UserData() {
                     </Box>
                   ))}
 
-                  {/* Botão Salvar Alterações */}
+                  {/* Save Changes Button */}
                   <Button
                     variant="contained"
                     color="primary"
@@ -287,7 +294,7 @@ export default function UserData() {
                     Salvar Alterações
                   </Button>
 
-                  {/* Botão Deletar Conta */}
+                  {/* Delete Account Button */}
                   <Button
                     variant="contained"
                     color="error"
@@ -297,6 +304,7 @@ export default function UserData() {
                     Deletar Conta
                   </Button>
 
+                  {/* Confirmation Dialogs */}
                   <ConfirmationDialog
                     open={showConfirmationDialog}
                     onClose={() => setShowConfirmationDialog(false)}
@@ -308,14 +316,10 @@ export default function UserData() {
                   <ConfirmationDialog
                     open={showDeleteFieldsDialog}
                     onClose={() => setShowDeleteFieldsDialog(false)}
-                    onConfirm={handleSaveChanges}
-                    title="Deletar Conta"
-                    content="Tem certeza de que deseja deletar sua conta? Esta ação é irreversível e todos os seus dados serão perdidos."
-                  >
-                    <Button variant="contained" color="error">
-                      Confirmar Exclusão
-                    </Button>
-                  </ConfirmationDialog>
+                    onConfirm={handleDeleteAccount}
+                    title="Rejeitar os Termos de Uso"
+                    content="Você tem certeza? Esta ação excluirá todos os dados e sua conta. Deseja confirmar?"
+                  />
                 </Box>
               </Box>
             </Box>
@@ -325,4 +329,3 @@ export default function UserData() {
     </>
   );
 }
-
