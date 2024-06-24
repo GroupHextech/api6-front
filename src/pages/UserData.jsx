@@ -158,11 +158,7 @@ export default function UserData() {
 
           <Box m="20px">
             {/* CONTENT */}
-            <Box
-              display="grid"
-              gridTemplateColumns="repeat(12, 1fr)"
-              gap="20px"
-            >
+            <Box display="grid" gridTemplateColumns="repeat(12, 1fr)" gap="20px">
               <Box gridColumn="span 12" p="20px" backgroundColor={colors.primary[400]}>
                 <Box
                   sx={{
@@ -172,13 +168,6 @@ export default function UserData() {
                     gap: 2,
                   }}
                 >
-                  <img
-                    alt="profile-user"
-                    width="200px"
-                    height="200px"
-                    src={userData.foto}
-                    style={{ borderRadius: "50%" }}
-                  />
                   <Box
                     sx={{
                       display: "flex",
@@ -319,10 +308,14 @@ export default function UserData() {
                   <ConfirmationDialog
                     open={showDeleteFieldsDialog}
                     onClose={() => setShowDeleteFieldsDialog(false)}
-                    onConfirm={handleDeleteAccount}
-                    title="Rejeitar os Termos de Uso"
-                    content="Você tem certeza? Esta ação excluirá todos os dados e sua conta. Deseja confirmar?"
-                  />
+                    onConfirm={handleSaveChanges}
+                    title="Deletar Conta"
+                    content="Tem certeza de que deseja deletar sua conta? Esta ação é irreversível e todos os seus dados serão perdidos."
+                  >
+                    <Button variant="contained" color="error">
+                      Confirmar Exclusão
+                    </Button>
+                  </ConfirmationDialog>
                 </Box>
               </Box>
             </Box>
@@ -332,3 +325,4 @@ export default function UserData() {
     </>
   );
 }
+

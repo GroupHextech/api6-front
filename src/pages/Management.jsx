@@ -1,8 +1,5 @@
-// imports
 import React, { useEffect, useState } from "react";
-
 import DeleteIcon from "@mui/icons-material/Delete";
-import BlockIcon from "@mui/icons-material/Block";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
@@ -10,62 +7,47 @@ import {
     Box,
     Typography,
     useTheme,
-    Stack,
     TextField,
     IconButton,
     Button,
     MenuItem,
 } from "@mui/material";
-
-import { getFirestore } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
 import {
     collection,
     getDocs,
     deleteDoc,
     doc,
-    updateDoc,
     addDoc,
     Timestamp,
     query,
     orderBy,
     limit,
 } from "firebase/firestore";
-
 import { handleRestore } from "../services/SalesService.js";
 import { firestore } from "../services/firebaseConfig";
-
 import { tokens } from "../theme";
-
 import Header from "../components/Header";
-
 import dayjs from "dayjs";
 
-// função principal
 export default function Management() {
-    // variaveis da função
     const theme = useTheme();
     const colors = tokens(theme.palette.mode);
     const today = dayjs();
-    const db = getFirestore();
-    const versaoTermoCollection = collection(db, "VersaoTermo");
+    const db = firestore;
     const versionQuery = query(
-        collection(firestore, "VersaoTermo"),
-        orderBy("termo.principal.version", "desc"),
+        collection(db, "VersaoTermo"),
+        orderBy("date", "desc"),
         limit(1)
     );
-    
 
-    // declaração de estados (variaveis mutaveis)
-    // para collection users
     const [users, setUsers] = useState([]);
-
-    // para collection versaoTermo
-    const [versaoTermo, setVersaoTermo] = useState([]);
+    const [latestTerm, setLatestTerm] = useState(null);
     const [searchTerm, setSearchTerm] = useState("");
     const [currentTermVersion, setCurrentTermVersion] = useState("");
-    const [newOptionalTerm, setOptionalTerm] = useState("");
-    const [newMainTermText, setMainTermText] = useState("");
+    const [newOptionalKey, setNewOptionalKey] = useState("");
+    const [newOptionalValue, setNewOptionalValue] = useState("");
+    const [newMainTermText, setNewMainTermText] = useState("");
+    const [selectedTermType, setSelectedTermType] = useState("");
 
     const [selectedDate, setSelectedDate] = useState(dayjs());
 
@@ -73,27 +55,25 @@ export default function Management() {
         setSelectedDate(newValue);
     };
 
-    // pega as informações a serem exibidas
     useEffect(() => {
         async function fetchData() {
             try {
-                // todos os usuarios
                 const usersCollection = collection(db, "users");
                 const usersSnapshot = await getDocs(usersCollection);
                 const usersList = usersSnapshot.docs.map((doc) => ({
                     id: doc.id,
-                    ...doc.data()
+                    ...doc.data(),
                 }));
                 setUsers(usersList);
 
-                // termo principal e opicionais
-                versaoTermoCollection
-                const versaoTermoSnapshot = await getDocs(versaoTermoCollection);
-                const termsList = versaoTermoSnapshot.docs.map((doc) => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
-                setVersaoTermo(termsList);
+                const versionSnapshot = await getDocs(versionQuery);
+                if (!versionSnapshot.empty) {
+                    const latestDoc = versionSnapshot.docs[0];
+                    setLatestTerm(latestDoc.data());
+                    setCurrentTermVersion(
+                        latestDoc.data().termo.principal.version.toString()
+                    );
+                }
             } catch (error) {
                 console.error("Erro ao buscar dados:", error);
             }
@@ -101,103 +81,103 @@ export default function Management() {
         fetchData();
     }, []);
 
-    // inicio visualização e deleção de usuario
     const handleDeleteUser = async (userId) => {
         try {
             await deleteDoc(doc(firestore, "users", userId));
             const blacklistRef = collection(firestore, "blacklist");
             await addDoc(blacklistRef, { userId, timestamp: Timestamp.now() });
             setUsers(users.filter((user) => user.id !== userId));
-            await updateTermVersion();
         } catch (error) {
             console.error("Error deleting user:", error);
         }
     };
-    // fim visualização e deleção de usuario
 
-    // inicio criação e atualização de termos
-    const updateMainTerm = async (newMainTermText) => {
+    const updateMainTerm = async () => {
         try {
-            // Query to fetch the latest version
-            const versionQuery = query(
-                collection(firestore, "VersaoTermo"),
-                orderBy("termo.principal.version", "desc"),
-                limit(1)
-            );
-            
-            // Get the latest version document
             const versionSnapshot = await getDocs(versionQuery);
             const latestVersionDoc = versionSnapshot.docs[0];
             const latestData = latestVersionDoc.data();
-            let opcionais = latestData.termo.opcionais;
-    
-            // Increment the version number
-            const latestVersionDocToInt = parseInt(latestData.termo.principal.version, 10);
-            const newVersion = latestVersionDocToInt + 1;
-    
-            // Create the new document with updated main term text
+            const newVersion = parseInt(latestData.termo.principal.version, 10) + 1;
+
             await addDoc(collection(firestore, "VersaoTermo"), {
-                date: new Date(), // Set current date
+                date: new Date(),
                 termo: {
-                    opcionais: opcionais,
+                    opcionais: latestData.termo.opcionais, // Preserve existing opcionais
                     principal: {
                         texto: newMainTermText,
-                        version: newVersion
-                    }
-                }
+                        version: newVersion,
+                    },
+                },
             });
-    
-            // Update the current term version state
+
             setCurrentTermVersion(newVersion.toString());
+            setLatestTerm((prevTerm) => ({
+                ...prevTerm,
+                termo: {
+                    ...prevTerm.termo,
+                    principal: {
+                        texto: newMainTermText,
+                        version: newVersion,
+                    },
+                },
+            }));
         } catch (error) {
             console.error("Erro ao atualizar a versão do termo:", error);
         }
     };
 
-    // Function to add a new optional term
-    const addNewOptionalTerm = async (newOptionalKey, newOptionalValue) => {
+    const addNewOptionalTerm = async () => {
         try {
-            // Get the latest version document
-            versionQuery
             const versionSnapshot = await getDocs(versionQuery);
             const latestVersionDoc = versionSnapshot.docs[0];
             const latestData = latestVersionDoc.data();
-            let opcionais = latestData.termo.opcionais;
+            const opcionais = {
+                ...latestData.termo.opcionais,
+                [newOptionalKey]: newOptionalValue,
+            };
+            const newVersion = parseInt(latestData.termo.principal.version, 10);
 
-            // Add new key-value pair to opcionais
-            opcionais[newOptionalKey] = newOptionalValue;
-
-            // Increment the version number
-            //const latestVersionDocToInt = parseInt(latestData.termo.principal.version, 10);
-            //const newVersion = latestVersionDocToInt + 1;
-
-            // Create the new document with updated opcionais
             await addDoc(collection(firestore, "VersaoTermo"), {
-                date: new Date(), // Set current date
+                date: new Date(),
                 termo: {
                     opcionais: opcionais,
                     principal: {
-                        texto: latestData.termo.principal.texto, // Keep the existing main term text
-                        version: latestData.termo.principal.version
-                    }
-                }
+                        texto: latestData.termo.principal.texto,
+                        version: newVersion,
+                    },
+                },
             });
 
-            // Update the current term version state
-            //setCurrentTermVersion(newVersion.toString());
+            setCurrentTermVersion(newVersion.toString());
+            setLatestTerm((prevTerm) => ({
+                ...prevTerm,
+                termo: {
+                    ...prevTerm.termo,
+                    opcionais: opcionais,
+                },
+            }));
         } catch (error) {
             console.error("Erro ao adicionar um novo termo opcional:", error);
         }
     };
-    // fim criação e atualização de termos
 
-    // html
+    const handleTermTypeChange = (event) => {
+        setSelectedTermType(event.target.value);
+    };
+
+    const handleAddNewTerm = () => {
+        if (selectedTermType === "main") {
+            updateMainTerm();
+        } else {
+            addNewOptionalTerm();
+        }
+    };
+
     return (
         <Box>
             <Box
                 style={{ flex: 0.8, display: "flex", flexDirection: "column", gap: 10 }}
             >
-                {/* parte de cima */}
                 <Box m="20px">
                     <Box
                         display="flex"
@@ -209,7 +189,6 @@ export default function Management() {
                 </Box>
 
                 <div style={{ display: "flex", flexDirection: "row" }}>
-                    {/* inicio parte da esquerda */}
                     <Box
                         gridColumn="span 3"
                         backgroundColor={colors.primary[400]}
@@ -232,27 +211,29 @@ export default function Management() {
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
-                        {filteredUsers.length > 0 ? (filteredUsers.map((user) => (
-                            <Box
-                                key={user.id}
-                                display="flex"
-                                justifyContent="space-between"
-                                alignItems="center"
-                                width="100%"
-                                p={1}
-                                m={1}
-                                bgcolor={colors.grey[900]}
-                                borderRadius={2}
-                            >
-                                <Typography variant="body1">{user.name}</Typography>
-                                <IconButton
-                                    color="secondary"
-                                    onClick={() => handleDeleteUser(user.id)}
+                        {users.length > 0 ? (
+                            users.map((user) => (
+                                <Box
+                                    key={user.id}
+                                    display="flex"
+                                    justifyContent="space-between"
+                                    alignItems="center"
+                                    width="100%"
+                                    p={1}
+                                    m={1}
+                                    bgcolor={colors.grey[900]}
+                                    borderRadius={2}
                                 >
-                                    <DeleteIcon />
-                                </IconButton>
-                            </Box>
-                        ))) : (
+                                    <Typography variant="body1">{user.name}</Typography>
+                                    <IconButton
+                                        color="secondary"
+                                        onClick={() => handleDeleteUser(user.id)}
+                                    >
+                                        <DeleteIcon />
+                                    </IconButton>
+                                </Box>
+                            ))
+                        ) : (
                             <Typography variant="body1">Nenhum usuário encontrado</Typography>
                         )}
                         <Box sx={{ display: "flex", alignItems: "center", gap: 2, margin: "10px" }}>
@@ -278,9 +259,7 @@ export default function Management() {
                             )}
                         </Box>
                     </Box>
-                    {/* fim parte da esquerda */}
 
-                    {/* inicio parte da direita */}
                     <Box
                         gridColumn="span 3"
                         backgroundColor={colors.primary[400]}
@@ -307,42 +286,41 @@ export default function Management() {
                             onChange={handleTermTypeChange}
                             select
                         >
-                            {termTypes.map((term) => (
-                                <MenuItem key={term.type} value={term.type}>
-                                    {term.type}
-                                </MenuItem>
-                            ))}
-                            <MenuItem value="new">Criar Novo Tipo</MenuItem>
+                            <MenuItem value="main">Atualizar Termo Principal</MenuItem>
+                            <MenuItem value="optional">Novo Termo Opcional</MenuItem>
                         </TextField>
-                        {selectedTermType === "new" && (
+                        {selectedTermType === "optional" && (
+                            <>
+                                <TextField
+                                    label="Chave do Termo Opcional"
+                                    variant="outlined"
+                                    fullWidth
+                                    margin="normal"
+                                    value={newOptionalKey}
+                                    onChange={(e) => setNewOptionalKey(e.target.value)}
+                                />
+                                <TextField
+                                    label="Valor do Termo Opcional"
+                                    variant="outlined"
+                                    fullWidth
+                                    margin="normal"
+                                    value={newOptionalValue}
+                                    onChange={(e) => setNewOptionalValue(e.target.value)}
+                                />
+                            </>
+                        )}
+                        {selectedTermType === "main" && (
                             <TextField
-                                label="Novo Tipo de Termo"
+                                label="Conteúdo do Termo Principal"
                                 variant="outlined"
                                 fullWidth
                                 margin="normal"
-                                value={newTermType}
-                                onChange={(e) => setNewTermType(e.target.value)}
+                                multiline
+                                rows={4}
+                                value={newMainTermText}
+                                onChange={(e) => setNewMainTermText(e.target.value)}
                             />
                         )}
-                        <TextField
-                            label="Versão"
-                            variant="outlined"
-                            fullWidth
-                            margin="normal"
-                            value={newTermVersion}
-                            onChange={(e) => setNewTermVersion(e.target.value)}
-                            disabled={selectedTermType !== "new"} // Disable version input if not creating a new type
-                        />
-                        <TextField
-                            label="Conteúdo"
-                            variant="outlined"
-                            fullWidth
-                            margin="normal"
-                            multiline
-                            rows={4}
-                            value={newTermContent}
-                            onChange={(e) => setNewTermContent(e.target.value)}
-                        />
                         <Button
                             variant="contained"
                             color="primary"
@@ -353,25 +331,44 @@ export default function Management() {
                         <Typography variant="h6" gutterBottom>
                             Termos Ativos
                         </Typography>
-                        {termTypes.map((term) => (
-                            <Box
-                                key={term.type}
-                                display="flex"
-                                justifyContent="space-between"
-                                alignItems="center"
-                                width="100%"
-                                p={1}
-                                m={1}
-                                bgcolor={colors.primary[500]}
-                                borderRadius={2}
-                            >
-                                <Typography variant="body1">
-                                    {term.type} - Versão {term.latestVersion}
-                                </Typography>
-                            </Box>
-                        ))}
+                        {latestTerm && (
+                            <>
+                                <Box
+                                    display="flex"
+                                    flexDirection="column"
+                                    justifyContent="space-between"
+                                    alignItems="flex-start"
+                                    width="100%"
+                                    p={1}
+                                    m={1}
+                                    bgcolor={colors.primary[500]}
+                                    borderRadius={2}
+                                >
+                                    <Typography variant="body1">
+                                        {latestTerm.termo.principal.texto}
+                                    </Typography>
+                                </Box>
+                                <Box
+                                    display="flex"
+                                    flexDirection="column"
+                                    justifyContent="space-between"
+                                    alignItems="flex-start"
+                                    width="100%"
+                                    p={1}
+                                    m={1}
+                                    bgcolor={colors.primary[500]}
+                                    borderRadius={2}
+                                >
+                                    {latestTerm.termo.opcionais &&
+                                        Object.keys(latestTerm.termo.opcionais).map((key) => (
+                                            <Typography variant="body2" key={key}>
+                                                {key}
+                                            </Typography>
+                                        ))}
+                                </Box>
+                            </>
+                        )}
                     </Box>
-                    {/* fim parte da direita */}
                 </div>
             </Box>
         </Box>
